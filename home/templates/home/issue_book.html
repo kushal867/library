@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="auth-container">
+        <h2>Issue Book</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" style="margin-top: 1.5rem;">Issue Book</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
