@@ -32,7 +32,7 @@ def issue_book(request):
     if request.method == "POST":
         form = IssueBookForm(request.POST)
         if form.is_valid():
-            # Logic to save issued book
+            # Logic to save issued book  
             obj = IssuedBook()
             obj.student = form.cleaned_data['name2']
             obj.book = form.cleaned_data['isbn2']
