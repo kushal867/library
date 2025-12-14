@@ -1,24 +1,114 @@
 {% extends 'base.html' %}
 
+{% block title %}Add Book - Library MS{% endblock %}
+
 {% block content %}
 <div class="auth-container">
-    <h2>📖 Add New Book</h2>
-    <form method="post">
+    <h2><i class="fas fa-book-medical"></i> Add New Book</h2>
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Fill in the details to add a book to your collection</p>
+    
+    <form method="post" id="addBookForm">
         {% csrf_token %}
         
-        <label for="name">Book Title</label>
-        <input type="text" id="name" name="name" required placeholder="The Great Gatsby">
+        <div class="form-group">
+            <label for="name">
+                <i class="fas fa-heading"></i> Book Title
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-book input-icon"></i>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    required 
+                    placeholder="The Great Gatsby"
+                    maxlength="200">
+            </div>
+        </div>
         
-        <label for="author">Author Name</label>
-        <input type="text" id="author" name="author" required placeholder="F. Scott Fitzgerald">
+        <div class="form-group">
+            <label for="author">
+                <i class="fas fa-pen-fancy"></i> Author Name
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-user-edit input-icon"></i>
+                <input 
+                    type="text" 
+                    id="author" 
+                    name="author" 
+                    required 
+                    placeholder="F. Scott Fitzgerald">
+            </div>
+        </div>
         
-        <label for="isbn">ISBN Number</label>
-        <input type="text" id="isbn" name="isbn" required placeholder="978-3-16-148410-0">
+        <div class="form-group">
+            <label for="isbn">
+                <i class="fas fa-barcode"></i> ISBN Number
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-hashtag input-icon"></i>
+                <input 
+                    type="text" 
+                    id="isbn" 
+                    name="isbn" 
+                    required 
+                    placeholder="978-3-16-148410-0"
+                    pattern="[0-9\-]+"
+                    title="ISBN should contain only numbers and dashes">
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                <i class="fas fa-info-circle"></i> Enter ISBN in standard format (e.g., 978-3-16-148410-0)
+            </small>
+        </div>
         
-        <label for="category">Category ID</label>
-        <input type="text" id="category" name="category" required placeholder="1">
+        <div class="form-group">
+            <label for="category">
+                <i class="fas fa-tags"></i> Category
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-layer-group input-icon"></i>
+                <input 
+                    type="text" 
+                    id="category" 
+                    name="category" 
+                    required 
+                    placeholder="Fiction, Science, History, etc."
+                    list="categoryList">
+            </div>
+            <datalist id="categoryList">
+                <option value="Fiction">
+                <option value="Non-Fiction">
+                <option value="Science">
+                <option value="History">
+                <option value="Biography">
+                <option value="Technology">
+                <option value="Philosophy">
+                <option value="Literature">
+            </datalist>
+            <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                <i class="fas fa-lightbulb"></i> Type or select from suggestions
+            </small>
+        </div>
         
-        <button type="submit">✨ Add Book</button>
+        <button type="submit" id="submitButton">
+            <i class="fas fa-plus-circle"></i> Add Book to Library
+        </button>
     </form>
 </div>
+
+{% block extra_js %}
+<script>
+    document.getElementById('addBookForm').addEventListener('submit', function(e) {
+        const button = document.getElementById('submitButton');
+        button.classList.add('loading');
+    });
+    
+    // Show success message if redirected back after successful submission
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+        showToast('Book added successfully!', 'success');
+    }
+</script>
 {% endblock %}
+{% endblock %}
+

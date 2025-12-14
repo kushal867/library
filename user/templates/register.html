@@ -1,25 +1,221 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Register</title>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Register for Library Management System">
+    <title>Register - Library MS</title>
     <link rel="stylesheet" href="{% static 'user/style.css' %}">
-  </head>
-  <body>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
     <div class="auth-container">
-        <h2>Register</h2>
+        <h2><i class="fas fa-user-plus"></i> Create Account</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Join us to manage your library efficiently</p>
 
-        <form method="post">
-        {% csrf_token %} {{ form.as_p }}
-        <button type="submit">Register</button>
+        <form method="post" id="registerForm">
+            {% csrf_token %}
+            
+            <!-- Username Field -->
+            <div class="form-group" id="usernameGroup">
+                <label for="id_username">
+                    <i class="fas fa-user"></i> Username
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user input-icon"></i>
+                    <input 
+                        type="text" 
+                        id="id_username" 
+                        name="username" 
+                        required 
+                        placeholder="Choose a username"
+                        autocomplete="username"
+                        minlength="3"
+                        maxlength="150">
+                </div>
+            </div>
+
+            <!-- Email Field -->
+            <div class="form-group">
+                <label for="id_email">
+                    <i class="fas fa-envelope"></i> Email Address
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input 
+                        type="email" 
+                        id="id_email" 
+                        name="email" 
+                        placeholder="your.email@example.com"
+                        autocomplete="email">
+                </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="id_password1">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input 
+                        type="password" 
+                        id="id_password1" 
+                        name="password1" 
+                        required 
+                        placeholder="Create a strong password"
+                        autocomplete="new-password"
+                        oninput="checkPasswordStrength(this.value)">
+                    <button type="button" class="password-toggle" onclick="togglePassword('id_password1', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strengthBar"></div>
+                </div>
+                <div class="password-strength-text" id="strengthText"></div>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div class="form-group" id="password2Group">
+                <label for="id_password2">
+                    <i class="fas fa-check-circle"></i> Confirm Password
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-check-circle input-icon"></i>
+                    <input 
+                        type="password" 
+                        id="id_password2" 
+                        name="password2" 
+                        required 
+                        placeholder="Re-enter your password"
+                        autocomplete="new-password"
+                        oninput="checkPasswordMatch()">
+                    <button type="button" class="password-toggle" onclick="togglePassword('id_password2', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div id="matchMessage"></div>
+            </div>
+
+            <!-- Error Messages -->
+            {% if form.errors %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            {{ error }}
+                        {% endfor %}
+                    {% endfor %}
+                </span>
+            </div>
+            {% endif %}
+
+            <button type="submit" id="registerButton">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
         </form>
 
         <div class="auth-footer">
-        <p>
-            Already have an account?
-            <a href="{% url 'login' %}">Login</a>
-        </p>
+            <p>
+                Already have an account?
+                <a href="{% url 'login' %}">Login here <i class="fas fa-arrow-right"></i></a>
+            </p>
         </div>
     </div>
-  </body>
+
+    <script>
+        // Password Toggle
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Password Strength Checker
+        function checkPasswordStrength(password) {
+            const strengthBar = document.getElementById('strengthBar');
+            const strengthText = document.getElementById('strengthText');
+            
+            let strength = 0;
+            let strengthClass = '';
+            let strengthLabel = '';
+            
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+            
+            strengthBar.className = 'password-strength-bar';
+            
+            if (password.length === 0) {
+                strengthText.textContent = '';
+                strengthBar.className = 'password-strength-bar';
+            } else if (strength <= 2) {
+                strengthClass = 'strength-weak';
+                strengthLabel = 'Weak password';
+            } else if (strength === 3) {
+                strengthClass = 'strength-medium';
+                strengthLabel = 'Medium strength';
+            } else {
+                strengthClass = 'strength-strong';
+                strengthLabel = 'Strong password';
+            }
+            
+            strengthBar.classList.add(strengthClass);
+            strengthText.textContent = strengthLabel;
+        }
+
+        // Password Match Checker
+        function checkPasswordMatch() {
+            const password1 = document.getElementById('id_password1').value;
+            const password2 = document.getElementById('id_password2').value;
+            const matchMessage = document.getElementById('matchMessage');
+            const password2Group = document.getElementById('password2Group');
+            
+            if (password2.length === 0) {
+                matchMessage.innerHTML = '';
+                password2Group.classList.remove('has-error', 'has-success');
+                return;
+            }
+            
+            if (password1 === password2) {
+                matchMessage.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> Passwords match</div>';
+                password2Group.classList.remove('has-error');
+                password2Group.classList.add('has-success');
+            } else {
+                matchMessage.innerHTML = '<div class="error-message"><i class="fas fa-times-circle"></i> Passwords do not match</div>';
+                password2Group.classList.remove('has-success');
+                password2Group.classList.add('has-error');
+            }
+        }
+
+        // Form submit with loading state
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const password1 = document.getElementById('id_password1').value;
+            const password2 = document.getElementById('id_password2').value;
+            
+            if (password1 !== password2) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            const button = document.getElementById('registerButton');
+            button.classList.add('loading');
+        });
+    </script>
+</body>
 </html>
+

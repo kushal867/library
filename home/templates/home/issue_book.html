@@ -1,12 +1,58 @@
 {% extends 'base.html' %}
 
+{% block title %}Issue Book - Library MS{% endblock %}
+
 {% block content %}
 <div class="auth-container">
-    <h2>📤 Issue Book</h2>
-    <form method="post">
+    <h2><i class="fas fa-hand-holding-heart"></i> Issue Book</h2>
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Assign a book to a library member</p>
+    
+    <form method="post" id="issueForm">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">✨ Issue Book</button>
+        
+        {% for field in form %}
+        <div class="form-group {% if field.errors %}has-error{% endif %}">
+            <label for="{{ field.id_for_label }}">
+                <i class="fas fa-{% if 'book' in field.name %}book{% elif 'student' in field.name or 'member' in field.name %}user{% elif 'date' in field.name %}calendar{% else %}info-circle{% endif %}"></i>
+                {{ field.label }}
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-{% if 'book' in field.name %}book{% elif 'student' in field.name or 'member' in field.name %}user{% elif 'date' in field.name %}calendar{% else %}info-circle{% endif %} input-icon"></i>
+                {% if field.field.widget.input_type == 'select' %}
+                    {{ field }}
+                {% else %}
+                    <input 
+                        type="{{ field.field.widget.input_type }}" 
+                        id="{{ field.id_for_label }}" 
+                        name="{{ field.name }}"
+                        {% if field.field.required %}required{% endif %}
+                        placeholder="{{ field.label }}"
+                        class="{% if field.errors %}error{% endif %}"
+                        style="padding-left: 3rem;">
+                {% endif %}
+            </div>
+            {% if field.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ field.errors.0 }}
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <button type="submit" id="issueButton">
+            <i class="fas fa-hand-holding"></i> Issue Book
+        </button>
     </form>
 </div>
+
+{% block extra_js %}
+<script>
+    document.getElementById('issueForm').addEventListener('submit', function(e) {
+        const button = document.getElementById('issueButton');
+        button.classList.add('loading');
+    });
+</script>
 {% endblock %}
+{% endblock %}
+

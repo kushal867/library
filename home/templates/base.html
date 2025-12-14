@@ -4,18 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Management System</title>
+    <meta name="description" content="Modern library management system for efficient book tracking and management">
+    <meta name="keywords" content="library, books, management, education">
+    <meta name="author" content="Library MS">
+    <title>{% block title %}Library Management System{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'user/style.css' %}">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <nav class="navbar">
-        <a href="{% url 'index' %}" class="navbar-brand">📚 Library MS</a>
+        <a href="{% url 'index' %}" class="navbar-brand">
+            <i class="fas fa-book-open"></i> Library MS
+        </a>
         <div class="nav-links">
-            <a href="{% url 'index' %}">Dashboard</a>
-            <a href="{% url 'add_book' %}">Add Book</a>
-            <a href="{% url 'issue_book' %}">Issue Book</a>
-            <a href="{% url 'logout' %}">Logout</a>
+            <a href="{% url 'index' %}">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="{% url 'add_book' %}">
+                <i class="fas fa-plus-circle"></i> Add Book
+            </a>
+            <a href="{% url 'issue_book' %}">
+                <i class="fas fa-hand-holding"></i> Issue Book
+            </a>
+            <a href="{% url 'logout' %}">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
         </div>
     </nav>
 
@@ -24,5 +42,75 @@
         {% endblock %}
     </div>
 
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-book-open"></i> Library MS</h3>
+                <p>Modern library management made simple and efficient. Track, manage, and organize your book collection with ease.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <a href="{% url 'index' %}"><i class="fas fa-chevron-right"></i> Dashboard</a>
+                <a href="{% url 'add_book' %}"><i class="fas fa-chevron-right"></i> Add Book</a>
+                <a href="{% url 'issue_book' %}"><i class="fas fa-chevron-right"></i> Issue Book</a>
+            </div>
+            <div class="footer-section">
+                <h3>Support</h3>
+                <p><i class="fas fa-envelope"></i> support@libraryms.com</p>
+                <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                <p><i class="fas fa-map-marker-alt"></i> 123 Library St, Book City</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Library Management System. All rights reserved. Made with <i class="fas fa-heart" style="color: #f093fb;"></i></p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Utilities -->
+    <script>
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${iconMap[type]} toast-icon"></i>
+                <div class="toast-message">${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.4s ease';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // Form Loading State
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('loading');
+                button.disabled = false;
+            }
+        }
+
+        // Smooth scroll
+        document.documentElement.style.scrollBehavior = 'smooth';
+    </script>
+
+    {% block extra_js %}{% endblock %}
+
 </body>
 </html>
+
