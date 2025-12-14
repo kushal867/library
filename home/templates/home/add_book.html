@@ -2,21 +2,21 @@
 
 {% block content %}
 <div class="auth-container">
-    <h2>Add New Book</h2>
+    <h2>Add New Book 📖</h2>
     <form method="post">
         {% csrf_token %}
         
-        <label>Book Name</label>
-        <input type="text" name="name" required placeholder="Enter book name">
+        <label for="name">Book Title</label>
+        <input type="text" id="name" name="name" required placeholder="e.g., The Great Gatsby">
         
-        <label>Author</label>
-        <input type="text" name="author" required placeholder="Enter author name">
+        <label for="author">Author Name</label>
+        <input type="text" id="author" name="author" required placeholder="e.g., F. Scott Fitzgerald">
         
-        <label>ISBN</label>
-        <input type="text" name="isbn" required placeholder="Enter ISBN number">
+        <label for="isbn">ISBN Number</label>
+        <input type="text" id="isbn" name="isbn" required placeholder="e.g., 978-3-16-148410-0">
         
-        <label>Category ID</label>
-        <input type="text" name="category" required placeholder="Enter Category ID">
+        <label for="category">Category ID</label>
+        <input type="text" id="category" name="category" required placeholder="Enter category ID">
         
         <button type="submit">Add Book</button>
     </form>

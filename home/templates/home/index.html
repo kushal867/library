@@ -2,15 +2,15 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>Welcome back, {{ request.user.username }}!</h1>
-    <p>Manage your library efficiently.</p>
+    <h1>Welcome back, {{ request.user.username }}! 👋</h1>
+    <p>Manage your library collection efficiently</p>
 </div>
 
 <!-- Stats Cards -->
 <div class="stats-grid">
     <div class="card-stat">
-        <h3>Books in Library</h3>
-        <p>--</p>
+        <h3>Total Books</h3>
+        <p>{{ books.count }}</p>
     </div>
     <div class="card-stat">
         <h3>Issued Books</h3>
@@ -23,7 +23,7 @@
     <table>
         <thead>
             <tr>
-                <th>Book Name</th>
+                <th>Title</th>
                 <th>Author</th>
                 <th>ISBN</th>
                 <th>Category</th>
@@ -33,7 +33,7 @@
         <tbody>
             {% for book in books %}
             <tr>
-                <td>{{ book.name }}</td>
+                <td><strong>{{ book.name }}</strong></td>
                 <td>{{ book.author }}</td>
                 <td>{{ book.isbn }}</td>
                 <td>{{ book.category }}</td>
@@ -43,7 +43,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5" style="text-align: center; color: #94a3b8;">No books found.</td>
+                <td colspan="5" class="text-center text-muted">No books in the library yet. Add your first book!</td>
             </tr>
             {% endfor %}
         </tbody>
