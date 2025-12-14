@@ -1,29 +1,24 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 0 auto;">
-    <div class="auth-container">
-        <h2>Add New Book</h2>
-        <form method="post">
-            {% csrf_token %}
-            
-            <label>Book Name</label>
-            <input type="text" name="name" required placeholder="Enter book name">
-            
-            <label>Author</label>
-            <input type="text" name="author" required placeholder="Enter author name">
-            
-            <label>ISBN</label>
-            <input type="text" name="isbn" required placeholder="Enter ISBN number">
-            
-            <!-- In a real scenario, this should be a select dropdown of existing categories. -->
-            <!-- For MVP simplicity as per views implementation, we'll use a text input or assume ID. -->
-            <!-- The view expects 'category', but models want a foreign key ID. -->
-            <label>Category ID</label>
-            <input type="text" name="category" required placeholder="Enter Category ID">
-            
-            <button type="submit" style="margin-top: 1.5rem;">Add Book</button>
-        </form>
-    </div>
+<div class="auth-container">
+    <h2>Add New Book</h2>
+    <form method="post">
+        {% csrf_token %}
+        
+        <label>Book Name</label>
+        <input type="text" name="name" required placeholder="Enter book name">
+        
+        <label>Author</label>
+        <input type="text" name="author" required placeholder="Enter author name">
+        
+        <label>ISBN</label>
+        <input type="text" name="isbn" required placeholder="Enter ISBN number">
+        
+        <label>Category ID</label>
+        <input type="text" name="category" required placeholder="Enter Category ID">
+        
+        <button type="submit">Add Book</button>
+    </form>
 </div>
 {% endblock %}

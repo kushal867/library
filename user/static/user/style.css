@@ -15,12 +15,64 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     color: var(--text-main);
+    display: block; /* Overriding previous flex center which might break full page layouts */
 }
 
+/* Navbar */
+.navbar {
+    background: rgba(15, 23, 42, 0.8); /* Darker semi-transparent background */
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(to right, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    text-decoration: none;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.nav-links a:hover {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.container {
+    margin-top: 80px;
+    padding: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Auth / Form Container */
 .auth-container {
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
@@ -29,25 +81,32 @@ body {
     padding: 2.5rem;
     border-radius: 1rem;
     width: 100%;
-    max-width: 400px;
+    max-width: 450px; /* Slightly wider */
+    margin: 0 auto; /* Center it */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-h2 {
+h1, h2, h3 {
     margin-top: 0;
+    color: var(--text-main);
+}
+
+h2 {
     margin-bottom: 1.5rem;
     text-align: center;
     font-size: 1.8rem;
     font-weight: 700;
     background: linear-gradient(to right, #818cf8, #c084fc);
-    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
     color: transparent;
 }
 
-form p {
-    margin-bottom: 1rem;
+/* Forms */
+form {
+    display: flex; /* Helps with spacing */
+    flex-direction: column;
 }
 
 label {
@@ -55,11 +114,14 @@ label {
     margin-bottom: 0.5rem;
     color: var(--text-muted);
     font-size: 0.875rem;
+    font-weight: 500;
 }
 
 input[type="text"],
 input[type="password"],
-input[type="email"] {
+input[type="email"],
+select, 
+textarea {
     width: 100%;
     padding: 0.75rem;
     border-radius: 0.5rem;
@@ -68,18 +130,17 @@ input[type="email"] {
     color: var(--text-main);
     font-size: 1rem;
     transition: all 0.2s;
-    box-sizing: border-box; /* Ensure padding doesn't affect width */
+    box-sizing: border-box;
+    margin-bottom: 1.25rem;
 }
 
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="email"]:focus {
+input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
-button {
+button, .btn {
     width: 100%;
     padding: 0.75rem;
     background: var(--primary-color);
@@ -89,27 +150,122 @@ button {
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 1rem;
-}
-
-button:hover {
-    background-color: var(--primary-hover);
-}
-
-.auth-footer {
-    margin-top: 1.5rem;
+    transition: all 0.2s;
     text-align: center;
-    font-size: 0.875rem;
-    color: var(--text-muted);
-}
-
-.auth-footer a {
-    color: #818cf8;
     text-decoration: none;
-    transition: color 0.2s;
+    display: inline-block;
+    box-sizing: border-box;
 }
 
-.auth-footer a:hover {
-    color: #c084fc;
+button:hover, .btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: #ef4444;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.card-stat {
+    background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: transform 0.2s;
+}
+
+.card-stat:hover {
+    transform: translateY(-5px);
+    border-color: rgba(129, 140, 248, 0.3);
+}
+
+.card-stat h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.card-stat p {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0.5rem 0 0 0;
+    background: linear-gradient(to right, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Tables */
+.table-container {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+    color: #818cf8;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Header Section */
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-header h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    font-weight: 800;
+    background: linear-gradient(to right, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.page-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
 }
