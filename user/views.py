@@ -19,14 +19,14 @@ def user_login(request):
             )
             if user is not None:
                 login(request, user)
-                return redirect('/admin/')
+                return redirect('/home/')
 
     return render(request, 'login.html', {'form': form})
 
 
 def user_register(request):
     if request.user.is_authenticated:
-        return redirect('/admin/')
+        return redirect('/home/')
 
     form = RegisterForm()
 
@@ -37,7 +37,7 @@ def user_register(request):
             user.set_password(form.cleaned_data['password'])
             user.save()
             login(request, user)
-            return redirect('/admin/')
+            return redirect('/home/')
 
     return render(request, 'register.html', {'form': form})
 
