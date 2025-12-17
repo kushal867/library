@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Return Book - Library MS{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2><i class="fas fa-undo"></i> Return Book</h2>
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Select an issued book to return it to the library</p>
+    
+    <form method="post" id="returnForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="{{ form.issued_book.id_for_label }}">
+                <i class="fas fa-book-reader"></i> {{ form.issued_book.label }}
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-list input-icon"></i>
+                {{ form.issued_book }}
+            </div>
+            {% if form.issued_book.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.issued_book.errors.0 }}
+                </div>
+            {% endif %}
+            <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; display: block;">
+                <i class="fas fa-info-circle"></i> Select from currently issued books
+            </small>
+        </div>
+        
+        <button type="submit" id="returnButton">
+            <i class="fas fa-check-circle"></i> Return Book
+        </button>
+        
+        <a href="{% url 'view_issued_books' %}" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">
+            <i class="fas fa-list"></i> View All Issued Books
+        </a>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    document.getElementById('returnForm').addEventListener('submit', function(e) {
+        const button = document.getElementById('returnButton');
+        button.classList.add('loading');
+    });
+</script>
+{% endblock %}
+{% endblock %}

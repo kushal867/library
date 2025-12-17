@@ -31,11 +31,40 @@
             <a href="{% url 'issue_book' %}">
                 <i class="fas fa-hand-holding"></i> Issue Book
             </a>
-            <a href="{% url 'logout' %}">
-                <i class="fas fa-sign-out-alt"></i> Logout
+            <a href="{% url 'return_book' %}">
+                <i class="fas fa-undo"></i> Return Book
             </a>
+            <a href="{% url 'view_issued_books' %}">
+                <i class="fas fa-list"></i> Issued Books
+            </a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}" style="margin-left: auto;">
+                <i class="fas fa-user"></i> {{ user.username }} | Logout
+            </a>
+            {% endif %}
         </div>
     </nav>
+
+    <!-- Django Messages Display -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {% if message.tags == 'success' %}
+                <i class="fas fa-check-circle"></i>
+            {% elif message.tags == 'danger' or message.tags == 'error' %}
+                <i class="fas fa-exclamation-circle"></i>
+            {% elif message.tags == 'warning' %}
+                <i class="fas fa-exclamation-triangle"></i>
+            {% else %}
+                <i class="fas fa-info-circle"></i>
+            {% endif %}
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <div class="container">
         {% block content %}
@@ -54,6 +83,8 @@
                 <a href="{% url 'index' %}"><i class="fas fa-chevron-right"></i> Dashboard</a>
                 <a href="{% url 'add_book' %}"><i class="fas fa-chevron-right"></i> Add Book</a>
                 <a href="{% url 'issue_book' %}"><i class="fas fa-chevron-right"></i> Issue Book</a>
+                <a href="{% url 'return_book' %}"><i class="fas fa-chevron-right"></i> Return Book</a>
+                <a href="{% url 'view_issued_books' %}"><i class="fas fa-chevron-right"></i> Issued Books</a>
             </div>
             <div class="footer-section">
                 <h3>Support</h3>
@@ -78,11 +109,13 @@
             const iconMap = {
                 success: 'fa-check-circle',
                 error: 'fa-exclamation-circle',
+                danger: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
                 info: 'fa-info-circle'
             };
             
             toast.innerHTML = `
-                <i class="fas ${iconMap[type]} toast-icon"></i>
+                <i class="fas ${iconMap[type] || iconMap['info']} toast-icon"></i>
                 <div class="toast-message">${message}</div>
             `;
             
@@ -104,6 +137,27 @@
                 button.disabled = false;
             }
         }
+
+        // Auto-dismiss alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const closeBtn = alert.querySelector('.btn-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        alert.style.animation = 'fadeOut 0.3s ease';
+                        setTimeout(() => alert.remove(), 300);
+                    });
+                }
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    if (alert.parentElement) {
+                        alert.style.animation = 'fadeOut 0.3s ease';
+                        setTimeout(() => alert.remove(), 300);
+                    }
+                }, 5000);
+            });
+        });
 
         // Smooth scroll
         document.documentElement.style.scrollBehavior = 'smooth';

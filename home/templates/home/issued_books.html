@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Issued Books - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-list-alt"></i> Currently Issued Books</h1>
+    <p>Track all books that have been issued to students</p>
+</div>
+
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="card-stat">
+        <h3>Total Issued</h3>
+        <p>{{ total_issued }}</p>
+    </div>
+</div>
+
+{% if issued_books %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Book Title</th>
+                <th>ISBN</th>
+                <th>Student</th>
+                <th>Branch/Class</th>
+                <th>Issue Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for issued in issued_books %}
+            <tr {% if issued.is_overdue %}style="background-color: rgba(248, 113, 113, 0.1);"{% endif %}>
+                <td><strong>{{ issued.book.name }}</strong></td>
+                <td>{{ issued.book.isbn }}</td>
+                <td>{{ issued.student.user.username }}</td>
+                <td>{{ issued.student.branch }} - {{ issued.student.classroom }}</td>
+                <td>{{ issued.issued_date|date:"Y-m-d" }}</td>
+                <td>{{ issued.expiry_date|date:"Y-m-d" }}</td>
+                <td>
+                    {% if issued.is_overdue %}
+                        <span style="color: #f87171; font-weight: bold;">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Overdue ({{ issued.days_until_due|add:"-1"|stringformat:"d" }} days)
+                        </span>
+                    {% else %}
+                        <span style="color: #4ade80;">
+                            <i class="fas fa-check-circle"></i> 
+                            Due in {{ issued.days_until_due }} day{{ issued.days_until_due|pluralize }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="post" action="{% url 'return_book' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="issued_book" value="{{ issued.id }}">
+                        <button type="submit" class="btn btn-sm" style="padding: 0.4rem 0.8rem;">
+                            <i class="fas fa-undo"></i> Return
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-clipboard-list"></i>
+    <h3>No books currently issued</h3>
+    <p>All books are available in the library</p>
+    <a href="{% url 'issue_book' %}" class="btn">
+        <i class="fas fa-hand-holding"></i> Issue a Book
+    </a>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<style>
+    .table-container table th,
+    .table-container table td {
+        padding: 1rem;
+        text-align: left;
+    }
+    
+    .table-container table th {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(240, 147, 251, 0.1));
+        font-weight: 600;
+    }
+    
+    .table-container table tbody tr:hover {
+        background-color: rgba(240, 147, 251, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% endblock %}

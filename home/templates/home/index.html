@@ -11,15 +11,19 @@
 <div class="stats-grid">
     <div class="card-stat">
         <h3>Total Books</h3>
-        <p>{{ books.count }}</p>
+        <p>{{ total_books }}</p>
+    </div>
+    <div class="card-stat">
+        <h3>Total Copies</h3>
+        <p>{{ total_quantity }}</p>
     </div>
     <div class="card-stat">
         <h3>Issued Books</h3>
-        <p>--</p>
+        <p>{{ total_issued }}</p>
     </div>
     <div class="card-stat">
-        <h3>Available Books</h3>
-        <p>{{ books.count }}</p>
+        <h3>Available Copies</h3>
+        <p>{{ total_available }}</p>
     </div>
 </div>
 
@@ -62,6 +66,8 @@
                 <th>Author</th>
                 <th>ISBN</th>
                 <th>Category</th>
+                <th>Quantity</th>
+                <th>Available</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -72,11 +78,16 @@
                 <td>{{ book.author }}</td>
                 <td>{{ book.isbn }}</td>
                 <td><span class="badge">{{ book.category }}</span></td>
+                <td>{{ book.quantity }}</td>
+                <td>
+                    {% if book.is_available %}
+                        <span style="color: #4ade80;">✓ {{ book.available_quantity }}</span>
+                    {% else %}
+                        <span style="color: #f87171;">✗ 0</span>
+                    {% endif %}
+                </td>
                 <td>
                     <div class="action-buttons">
-                        <a href="#" class="btn btn-sm btn-edit" onclick="editBook({{ book.id }}); return false;">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
                         <a href="javascript:void(0)" class="btn btn-sm btn-danger" onclick="confirmDelete({{ book.id }}, '{{ book.name|escapejs }}')">
                             <i class="fas fa-trash"></i> Delete
                         </a>
@@ -173,7 +184,7 @@
         const confirmBtn = document.getElementById('confirmDeleteBtn');
         
         message.textContent = `Are you sure you want to delete "${bookName}"? This action cannot be undone.`;
-        confirmBtn.href = `/delete-book/${bookId}/`;
+        confirmBtn.href = `/home/delete_book/${bookId}/`;
         
         modal.classList.add('active');
     }
