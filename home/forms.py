@@ -16,7 +16,7 @@ class AddBookForm(forms.ModelForm):
     
     class Meta:
         model = Book
-        fields = ['name', 'author', 'isbn', 'category', 'description', 'quantity']
+        fields = ['name', 'author', 'isbn', 'category', 'description', 'quantity', 'cover_image', 'publication_year', 'publisher']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -42,6 +42,20 @@ class AddBookForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': '1',
                 'min': '1'
+            }),
+            'cover_image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'publication_year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '2024',
+                'min': '1800',
+                'max': '2100'
+            }),
+            'publisher': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Scribner'
             }),
         }
     
@@ -113,3 +127,44 @@ class ReturnBookForm(forms.Form):
             f"{obj.book.name} - {obj.student.user.username} "
             f"(Due: {obj.expiry_date.strftime('%Y-%m-%d')})"
         )
+
+
+class EditBookForm(forms.ModelForm):
+    """Form for editing existing books"""
+    category_name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Or enter a new category name'
+        }),
+        label="New Category (Optional)"
+    )
+    
+    class Meta:
+        model = Book
+        fields = ['name', 'author', 'isbn', 'category', 'description', 'quantity', 'cover_image', 'publication_year', 'publisher']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'author': forms.TextInput(attrs={'class': 'form-control'}),
+            'isbn': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'cover_image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'publication_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1800', 'max': '2100'}),
+            'publisher': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        category = cleaned_data.get('category')
+        category_name = cleaned_data.get('category_name')
+        
+        if category_name:
+            category_obj, created = Category.objects.get_or_create(name=category_name)
+            cleaned_data['category'] = category_obj
+        elif not category:
+            raise ValidationError("Please select a category or enter a new category name.")
+        
+        return cleaned_data
