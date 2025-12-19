@@ -102,19 +102,45 @@ class IssueBookForm(forms.Form):
                     f"'{book.name}' is not available. All {book.quantity} copies are currently issued."
                 )
             
-            # Check if student already has this book
-            existing_issue = IssuedBook.objects.filter(student=student, book=book).exists()
+            # Check if student already has this book issued (and not returned)
+            existing_issue = IssuedBook.objects.filter(
+                student=student,
+                book=book,
+                returned_date__isnull=True
+            ).exists()
             if existing_issue:
                 raise ValidationError(
-                    f"{student.user.username} has already issued this book."
+                    f"{student.user.username} has already issued this book and not returned it."
                 )
+            
+            # Check if student is active
+            if not student.is_active:
+                raise ValidationError(
+                    f"{student.user.username}'s account is inactive. Please contact administrator."
+                )
+            
+            # Check if student has reached book limit
+            if not student.can_issue_more_books():
+                active_count = student.active_issues_count()
+                overdue_books = student.get_overdue_books()
+                
+                if overdue_books.exists():
+                    raise ValidationError(
+                        f"{student.user.username} has {overdue_books.count()} overdue book(s). "
+                        "Please return overdue books before issuing new ones."
+                    )
+                else:
+                    raise ValidationError(
+                        f"{student.user.username} has reached the maximum limit of "
+                        f"{Student.MAX_BOOKS_ALLOWED} books (currently has {active_count})."
+                    )
         
         return cleaned_data
 
 class ReturnBookForm(forms.Form):
     """Form for returning issued books"""
     issued_book = forms.ModelChoiceField(
-        queryset=IssuedBook.objects.all(),
+        queryset=IssuedBook.objects.filter(returned_date__isnull=True),
         empty_label="Select Issued Book to Return",
         label="Issued Book",
         widget=forms.Select(attrs={'class': 'form-control'})
@@ -122,10 +148,16 @@ class ReturnBookForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Only show books that haven't been returned
+        self.fields['issued_book'].queryset = IssuedBook.objects.filter(
+            returned_date__isnull=True
+        ).select_related('book', 'student__user')
+        
         # Customize the display of issued books
         self.fields['issued_book'].label_from_instance = lambda obj: (
             f"{obj.book.name} - {obj.student.user.username} "
             f"(Due: {obj.expiry_date.strftime('%Y-%m-%d')})"
+            f"{' - OVERDUE' if obj.is_overdue() else ''}"
         )
 
 

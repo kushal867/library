@@ -1,0 +1,122 @@
+{% extends 'home/base.html' %}
+{% load static %}
+
+{% block title %}Edit Book - Library Management{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0"><i class="fas fa-edit"></i> Edit Book: {{ book.name }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Book Name *</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.author.id_for_label }}" class="form-label">Author *</label>
+                            {{ form.author }}
+                            {% if form.author.errors %}
+                                <div class="text-danger small">{{ form.author.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.isbn.id_for_label }}" class="form-label">ISBN * (Read-only)</label>
+                            {{ form.isbn }}
+                            <small class="form-text text-muted">ISBN cannot be changed once created</small>
+                            {% if form.isbn.errors %}
+                                <div class="text-danger small">{{ form.isbn.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">Category *</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-danger small">{{ form.category.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.category_name.id_for_label }}" class="form-label">{{ form.category_name.label }}</label>
+                            {{ form.category_name }}
+                            <small class="form-text text-muted">{{ form.category_name.help_text }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.quantity.id_for_label }}" class="form-label">Quantity *</label>
+                            {{ form.quantity }}
+                            <small class="form-text text-muted">
+                                Currently issued: {{ book.quantity|add:"-"|add:book.available_quantity }} copies. 
+                                Quantity cannot be reduced below this number.
+                            </small>
+                            {% if form.quantity.errors %}
+                                <div class="text-danger small">{{ form.quantity.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.cover_image.id_for_label }}" class="form-label">Cover Image</label>
+                            {% if book.cover_image %}
+                                <div class="mb-2">
+                                    <img src="{{ book.cover_image.url }}" alt="{{ book.name }}" style="max-width: 200px;" class="img-thumbnail">
+                                    <p class="small text-muted">Current cover image</p>
+                                </div>
+                            {% endif %}
+                            {{ form.cover_image }}
+                            <small class="form-text text-muted">Leave empty to keep current image</small>
+                            {% if form.cover_image.errors %}
+                                <div class="text-danger small">{{ form.cover_image.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.publication_year.id_for_label }}" class="form-label">Publication Year</label>
+                            {{ form.publication_year }}
+                            {% if form.publication_year.errors %}
+                                <div class="text-danger small">{{ form.publication_year.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.publisher.id_for_label }}" class="form-label">Publisher</label>
+                            {{ form.publisher }}
+                            {% if form.publisher.errors %}
+                                <div class="text-danger small">{{ form.publisher.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'index' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save"></i> Update Book
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

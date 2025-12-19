@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.db import transaction
+from home.models import Student
 from .forms import LoginForm, RegisterForm
 
 
@@ -47,12 +49,27 @@ def user_register(request):
                 messages.error(request, "Username already exists. Please choose a different one.")
             else:
                 try:
-                    user = form.save(commit=False)
-                    user.set_password(form.cleaned_data['password'])
-                    user.save()
-                    login(request, user)
-                    messages.success(request, f"Welcome, {user.username}! Your account has been created successfully.")
-                    return redirect('index')
+                    # Use transaction to ensure both user and student profile are created
+                    with transaction.atomic():
+                        user = form.save(commit=False)
+                        user.set_password(form.cleaned_data['password'])
+                        user.save()
+                        
+                        # Auto-create Student profile for the new user
+                        Student.objects.create(
+                            user=user,
+                            classroom=form.cleaned_data.get('classroom', 'N/A'),
+                            branch=form.cleaned_data.get('branch', 'N/A'),
+                            roll_no=form.cleaned_data.get('roll_no', ''),
+                            phone=form.cleaned_data.get('phone', ''),
+                        )
+                        
+                        login(request, user)
+                        messages.success(
+                            request, 
+                            f"Welcome, {user.username}! Your account and student profile have been created successfully."
+                        )
+                        return redirect('index')
                 except Exception as e:
                     messages.error(request, f"Error creating account: {str(e)}")
         else:
