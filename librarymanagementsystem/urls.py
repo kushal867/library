@@ -25,6 +25,9 @@ urlpatterns = [
     path('', RedirectView.as_view(url='/login/', permanent=False), name='root'),
     path('', include('user.urls')),
     path('home/', include('home.urls')),
+    # API v1 endpoints
+    path('api/v1/', include('home.api_urls')),
+    path('api/v1/', include('user.api_urls')),
 ]
 
 # Serve media files in development
