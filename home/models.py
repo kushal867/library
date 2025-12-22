@@ -42,8 +42,11 @@ class Book(models.Model):
     
     def available_quantity(self):
         """Calculate available copies (total - currently issued)"""
-        issued_count = IssuedBook.objects.filter(book=self, returned_date__isnull=True).count()
-        return self.quantity - issued_count
+        return self.quantity - self.currently_issued_count()
+    
+    def currently_issued_count(self):
+        """Get count of currently issued copies"""
+        return IssuedBook.objects.filter(book=self, returned_date__isnull=True).count()
     
     def clean(self):
         """Validate book data"""
@@ -170,6 +173,12 @@ class IssuedBook(models.Model):
         if self.is_overdue():
             days_overdue = abs(self.days_until_due())
             return days_overdue * self.FINE_PER_DAY
+        return 0
+    
+    def days_overdue(self):
+        """Get number of days overdue (positive number, 0 if not overdue)"""
+        if self.is_overdue():
+            return abs(self.days_until_due())
         return 0
     
     class Meta:

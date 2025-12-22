@@ -86,12 +86,16 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(IssuedBook)
 class IssuedBookAdmin(admin.ModelAdmin):
-    list_display = ['book', 'student', 'issued_date', 'expiry_date', 'status', 'fine_amount', 'fine_paid']
-    list_filter = ['issued_date', 'expiry_date', 'fine_paid']
+    list_display = ['book', 'student', 'issued_date', 'expiry_date', 'returned_date', 'status', 'fine_amount', 'fine_paid']
+    list_filter = ['issued_date', 'expiry_date', 'fine_paid', 'returned_date']
     search_fields = ['book__name', 'student__user__username', 'book__isbn']
     readonly_fields = ['issued_date', 'calculate_fine']
     list_per_page = 25
     date_hierarchy = 'issued_date'
+    
+    def get_queryset(self, request):
+        """Optimize query with select_related"""
+        return super().get_queryset(request).select_related('book', 'student__user')
     
     def status(self, obj):
         if obj.is_overdue():

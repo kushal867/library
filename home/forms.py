@@ -26,9 +26,11 @@ class AddBookForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'F. Scott Fitzgerald'
             }),
-            'isbn': forms.NumberInput(attrs={
+            'isbn': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '9783161484100'
+                'placeholder': '9783161484100',
+                'pattern': r'\d{10}(\d{3})?',
+                'title': 'Enter 10 or 13 digit ISBN'
             }),
             'category': forms.Select(attrs={
                 'class': 'form-control'
@@ -179,7 +181,7 @@ class EditBookForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'author': forms.TextInput(attrs={'class': 'form-control'}),
-            'isbn': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'isbn': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'category': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),

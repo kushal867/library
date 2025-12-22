@@ -2,16 +2,19 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, transaction, models
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count, F
 from .models import Book, Student, IssuedBook, Category
 from .forms import IssueBookForm, AddBookForm, ReturnBookForm, EditBookForm
 
 @login_required(login_url='/login/')
 def index(request):
     """Home page showing all books with search, filter, and pagination"""
-    books_list = Book.objects.all().select_related('category')
+    # Annotate books with currently_issued count for efficient filtering
+    books_list = Book.objects.all().select_related('category').annotate(
+        currently_issued=Count('issues', filter=Q(issues__returned_date__isnull=True))
+    )
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -27,13 +30,14 @@ def index(request):
     if category_filter:
         books_list = books_list.filter(category_id=category_filter)
     
-    # Filter by availability
+    # Filter by availability - now using database-level filtering
     availability_filter = request.GET.get('availability', '')
     if availability_filter == 'available':
-        # Only show books with available copies
-        books_list = [book for book in books_list if book.is_available()]
+        # Only show books with available copies (quantity > currently_issued)
+        books_list = books_list.filter(quantity__gt=F('currently_issued'))
     elif availability_filter == 'unavailable':
-        books_list = [book for book in books_list if not book.is_available()]
+        # Show books with no available copies (quantity <= currently_issued)
+        books_list = books_list.filter(quantity__lte=F('currently_issued'))
     
     # Pagination (25 books per page)
     paginator = Paginator(books_list, 25)
