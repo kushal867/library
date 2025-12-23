@@ -37,6 +37,14 @@
             <a href="{% url 'view_issued_books' %}">
                 <i class="fas fa-list"></i> Issued Books
             </a>
+            
+            <!-- Dark Mode Toggle -->
+            <div class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                <div class="theme-toggle-slider">
+                    <i class="fas fa-moon"></i>
+                </div>
+            </div>
+            
             {% if user.is_authenticated %}
             <a href="{% url 'logout' %}" style="margin-left: auto;">
                 <i class="fas fa-user"></i> {{ user.username }} | Logout
@@ -44,6 +52,11 @@
             {% endif %}
         </div>
     </nav>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" title="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 
     <!-- Django Messages Display -->
     {% if messages %}
@@ -161,6 +174,51 @@
 
         // Smooth scroll
         document.documentElement.style.scrollBehavior = 'smooth';
+
+        // Dark Mode Toggle
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.querySelector('.theme-toggle-slider i');
+            
+            body.classList.toggle('light-mode');
+            
+            if (body.classList.contains('light-mode')) {
+                icon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'light');
+            } else {
+                icon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const icon = document.querySelector('.theme-toggle-slider i');
+            
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                if (icon) icon.className = 'fas fa-sun';
+            }
+        });
+
+        // Back to Top Button
+        const backToTopBtn = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTopBtn.classList.add('show');
+            } else {
+                backToTopBtn.classList.remove('show');
+            }
+        });
+
+        backToTopBtn.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
     </script>
 
     {% block extra_js %}{% endblock %}

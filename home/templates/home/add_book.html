@@ -19,7 +19,7 @@
                 {{ form.name }}
             </div>
             {% if form.name.errors %}
-                <small class="error-text">{{ form.name.errors.0 }}</small>
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.name.errors.0 }}</small>
             {% endif %}
         </div>
         
@@ -32,7 +32,7 @@
                 {{ form.author }}
             </div>
             {% if form.author.errors %}
-                <small class="error-text">{{ form.author.errors.0 }}</small>
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.author.errors.0 }}</small>
             {% endif %}
         </div>
         
@@ -45,7 +45,7 @@
                 {{ form.isbn }}
             </div>
             {% if form.isbn.errors %}
-                <small class="error-text">{{ form.isbn.errors.0 }}</small>
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.isbn.errors.0 }}</small>
             {% endif %}
             <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
                 <i class="fas fa-info-circle"></i> Enter ISBN as numbers only (e.g., 9783161484100)
@@ -61,7 +61,7 @@
                 {{ form.category }}
             </div>
             {% if form.category.errors %}
-                <small class="error-text">{{ form.category.errors.0 }}</small>
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.category.errors.0 }}</small>
             {% endif %}
         </div>
         
@@ -87,7 +87,7 @@
                 {{ form.quantity }}
             </div>
             {% if form.quantity.errors %}
-                <small class="error-text">{{ form.quantity.errors.0 }}</small>
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.quantity.errors.0 }}</small>
             {% endif %}
         </div>
         
@@ -97,23 +97,82 @@
             </label>
             {{ form.description }}
             {% if form.description.errors %}
-                <small class="error-text">{{ form.description.errors.0 }}</small>
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.description.errors.0 }}</small>
             {% endif %}
         </div>
         
         <button type="submit" id="submitButton">
             <i class="fas fa-plus-circle"></i> Add Book to Library
         </button>
+        
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="{% url 'index' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
     </form>
 </div>
 
 {% block extra_js %}
 <script>
-    document.getElementById('addBookForm').addEventListener('submit', function(e) {
-        const button = document.getElementById('submitButton');
-        button.classList.add('loading');
+    const form = document.getElementById('addBookForm');
+    const submitButton = document.getElementById('submitButton');
+    
+    form.addEventListener('submit', function(e) {
+        submitButton.classList.add('loading');
+        submitButton.disabled = true;
     });
+    
+    // Add real-time validation
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            const formGroup = this.closest('.form-group');
+            
+            if (this.value.trim() === '') {
+                formGroup.classList.add('has-error');
+                formGroup.classList.remove('has-success');
+            } else {
+                formGroup.classList.remove('has-error');
+                formGroup.classList.add('has-success');
+            }
+        });
+        
+        input.addEventListener('input', function() {
+            const formGroup = this.closest('.form-group');
+            if (this.value.trim() !== '') {
+                formGroup.classList.remove('has-error');
+            }
+        });
+    });
+    
+    // ISBN Validation
+    const isbnInput = document.querySelector('input[name="isbn"]');
+    if (isbnInput) {
+        isbnInput.addEventListener('input', function() {
+            // Allow only numbers and hyphens
+            this.value = this.value.replace(/[^0-9-]/g, '');
+        });
+    }
 </script>
-{% endblock %}
-{% endblock %}
 
+<style>
+    .error-message {
+        color: var(--danger);
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        animation: shake 0.3s ease;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+</style>
+{% endblock %}
+{% endblock %}

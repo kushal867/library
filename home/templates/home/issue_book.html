@@ -40,19 +40,66 @@
         </div>
         {% endfor %}
         
+        <div style="background: rgba(79, 172, 254, 0.1); border-left: 4px solid #4facfe; padding: 1rem; border-radius: 8px; margin: 1.5rem 0;">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+                <i class="fas fa-info-circle"></i> Make sure the book is available before issuing it to a student.
+            </p>
+        </div>
+        
         <button type="submit" id="issueButton">
             <i class="fas fa-hand-holding"></i> Issue Book
         </button>
+        
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="{% url 'index' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
     </form>
 </div>
 
 {% block extra_js %}
 <script>
-    document.getElementById('issueForm').addEventListener('submit', function(e) {
-        const button = document.getElementById('issueButton');
-        button.classList.add('loading');
+    const form = document.getElementById('issueForm');
+    const submitButton = document.getElementById('issueButton');
+    
+    form.addEventListener('submit', function(e) {
+        submitButton.classList.add('loading');
+        submitButton.disabled = true;
+    });
+    
+    // Add validation feedback
+    const selects = form.querySelectorAll('select');
+    const inputs = form.querySelectorAll('input');
+    
+    [...selects, ...inputs].forEach(element => {
+        element.addEventListener('change', function() {
+            const formGroup = this.closest('.form-group');
+            
+            if (this.value) {
+                formGroup.classList.remove('has-error');  
+                formGroup.classList.add('has-success');
+            }
+        });
     });
 </script>
-{% endblock %}
-{% endblock %}
 
+<style>
+    .error-message {
+        color: var(--danger);
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        animation: shake 0.3s ease;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+</style>
+{% endblock %}
+{% endblock %}

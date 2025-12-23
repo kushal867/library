@@ -55,11 +55,64 @@
     </select>
 </div>
 
-<h2><i class="fas fa-book-open"></i> Your Books</h2>
+<!-- View Toggle -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2><i class="fas fa-book-open"></i> Your Books</h2>
+    <div class="view-toggle">
+        <div class="view-btn active" onclick="switchView('grid')" id="gridViewBtn">
+            <i class="fas fa-th-large"></i> Grid
+        </div>
+        <div class="view-btn" onclick="switchView('list')" id="listViewBtn">
+            <i class="fas fa-list"></i> List
+        </div>
+    </div>
+</div>
 
 {% if books %}
-<div class="table-container">
-    <table id="booksTable">
+<!-- Grid View -->
+<div class="books-grid" id="booksGrid">
+    {% for book in books %}
+    <div class="book-card" data-title="{{ book.name|lower }}" data-author="{{ book.author|lower }}" data-isbn="{{ book.isbn }}" data-category="{{ book.category }}">
+        <div class="book-cover">
+            <i class="fas fa-book"></i>
+        </div>
+        <div class="book-info">
+            <div class="book-title">{{ book.name }}</div>
+            <div class="book-author">
+                <i class="fas fa-user-edit"></i>
+                {{ book.author }}
+            </div>
+            <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                <i class="fas fa-barcode"></i> ISBN: {{ book.isbn }}
+            </div>
+            <span class="badge">{{ book.category }}</span>
+            
+            <div class="book-meta">
+                <div class="book-availability {% if book.is_available %}available{% else %}unavailable{% endif %}">
+                    <i class="fas fa-{% if book.is_available %}check-circle{% else %}times-circle{% endif %}"></i>
+                    {% if book.is_available %}
+                        {{ book.available_quantity }} Available
+                    {% else %}
+                        Not Available
+                    {% endif %}
+                </div>
+                <div class="book-actions">
+                    <a href="javascript:void(0)" 
+                       class="icon-btn delete-btn" 
+                       onclick="confirmDelete({{ book.id }}, '{{ book.name|escapejs }}')"
+                       title="Delete Book">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- List View (Table) -->
+<div class="table-container" id="booksTable" style="display: none;">
+    <table>
         <thead>
             <tr>
                 <th>Title</th>
@@ -127,13 +180,66 @@
 
 {% block extra_js %}
 <script>
+    // View Switching
+    let currentView = 'grid';
+    
+    function switchView(view) {
+        currentView = view;
+        const gridView = document.getElementById('booksGrid');
+        const listView = document.getElementById('booksTable');
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        
+        if (view === 'grid') {
+            gridView.style.display = 'grid';
+            listView.style.display = 'none';
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
+        } else {
+            gridView.style.display = 'none';
+            listView.style.display = 'block';
+            gridBtn.classList.remove('active');
+            listBtn.classList.add('active');
+        }
+        
+        localStorage.setItem('preferredView', view);
+    }
+    
+    // Load preferred view
+    window.addEventListener('DOMContentLoaded', function() {
+        const preferredView = localStorage.getItem('preferredView') || 'grid';
+        switchView(preferredView);
+    });
+    
     // Search and Filter Functionality
     function filterBooks() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const categoryFilter = document.getElementById('categoryFilter').value;
-        const rows = document.querySelectorAll('#booksTableBody tr');
         
-        rows.forEach(row => {
+        const gridCards = document.querySelectorAll('.book-card');
+        const tableRows = document.querySelectorAll('#booksTableBody tr');
+        
+        // Filter grid cards
+        gridCards.forEach(card => {
+            const title = card.dataset.title;
+            const author = card.dataset.author;
+            const isbn = card.dataset.isbn;
+            const category = card.dataset.category;
+            
+            const matchesSearch = title.includes(searchTerm) || 
+                                author.includes(searchTerm) || 
+                                isbn.includes(searchTerm);
+            const matchesCategory = !categoryFilter || category === categoryFilter;
+            
+            if (matchesSearch && matchesCategory) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Filter table rows
+        tableRows.forEach(row => {
             const title = row.dataset.title;
             const author = row.dataset.author;
             const isbn = row.dataset.isbn;
@@ -155,6 +261,30 @@
     // Sort Books
     function sortBooks() {
         const sortBy = document.getElementById('sortSelect').value;
+        
+        // Sort grid
+        const gridContainer = document.getElementById('booksGrid');
+        const gridCards = Array.from(gridContainer.querySelectorAll('.book-card'));
+        
+        gridCards.sort((a, b) => {
+            let aVal, bVal;
+            
+            if (sortBy === 'title') {
+                aVal = a.dataset.title;
+                bVal = b.dataset.title;
+            } else if (sortBy === 'author') {
+                aVal = a.dataset.author;
+                bVal = b.dataset.author;
+            } else {
+                return 0; // Keep original order for 'recent'
+            }
+            
+            return aVal.localeCompare(bVal);
+        });
+        
+        gridCards.forEach(card => gridContainer.appendChild(card));
+        
+        // Sort table
         const tbody = document.getElementById('booksTableBody');
         const rows = Array.from(tbody.querySelectorAll('tr'));
         
@@ -168,7 +298,7 @@
                 aVal = a.dataset.author;
                 bVal = b.dataset.author;
             } else {
-                return 0; // Keep original order for 'recent'
+                return 0;
             }
             
             return aVal.localeCompare(bVal);
@@ -201,11 +331,6 @@
         }
     });
     
-    // Edit Book (placeholder - can be implemented with a modal form)
-    function editBook(bookId) {
-        showToast('Edit functionality coming soon!', 'info');
-    }
-    
     // Show success message if book added/deleted
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('added') === 'true') {
@@ -230,4 +355,3 @@
 {% endblock %}
 
 {% endblock %}
-
