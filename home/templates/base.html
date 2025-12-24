@@ -111,6 +111,102 @@
         </div>
     </footer>
 
+    <!-- Floating Action Button (FAB) -->
+    <div class="fab-container" id="fabContainer">
+        <button class="fab-main ripple" onclick="toggleFAB()" title="Quick Actions">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu">
+            <div class="fab-item">
+                <span class="fab-label">Add Book</span>
+                <a href="{% url 'add_book' %}" class="fab-button ripple">
+                    <i class="fas fa-book-medical"></i>
+                </a>
+            </div>
+            <div class="fab-item">
+                <span class="fab-label">Issue Book</span>
+                <a href="{% url 'issue_book' %}" class="fab-button ripple">
+                    <i class="fas fa-hand-holding"></i>
+                </a>
+            </div>
+            <div class="fab-item">
+                <span class="fab-label">Return Book</span>
+                <a href="{% url 'return_book' %}" class="fab-button ripple">
+                    <i class="fas fa-undo"></i>
+                </a>
+            </div>
+            <div class="fab-item">
+                <span class="fab-label">View Issued</span>
+                <a href="{% url 'view_issued_books' %}" class="fab-button ripple">
+                    <i class="fas fa-list-alt"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="modal-overlay" id="shortcutsModal">
+        <div class="modal shortcuts-modal">
+            <h3><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h3>
+            <div style="margin-top: 1.5rem;">
+                <div class="shortcut-item">
+                    <span>Show/Hide Shortcuts</span>
+                    <div class="shortcut-keys">
+                        <span class="key">?</span>
+                    </div>
+                </div>
+                <div class="shortcut-item">
+                    <span>Go to Dashboard</span>
+                    <div class="shortcut-keys">
+                        <span class="key">G</span>
+                        <span class="key">H</span>
+                    </div>
+                </div>
+                <div class="shortcut-item">
+                    <span>Add New Book</span>
+                    <div class="shortcut-keys">
+                        <span class="key">A</span>
+                    </div>
+                </div>
+                <div class="shortcut-item">
+                    <span>Issue Book</span>
+                    <div class="shortcut-keys">
+                        <span class="key">I</span>
+                    </div>
+                </div>
+                <div class="shortcut-item">
+                    <span>Return Book</span>
+                    <div class="shortcut-keys">
+                        <span class="key">R</span>
+                    </div>
+                </div>
+                <div class="shortcut-item">
+                    <span>Toggle Theme</span>
+                    <div class="shortcut-keys">
+                        <span class="key">T</span>
+                    </div>
+                </div>
+                <div class="shortcut-item">
+                    <span>Search (when available)</span>
+                    <div class="shortcut-keys">
+                        <span class="key">/</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeShortcutsModal()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Transition Overlay -->
+    <div class="page-transition" id="pageTransition">
+        <div class="page-transition-spinner"></div>
+    </div>
+
+
     <!-- JavaScript Utilities -->
     <script>
         // Toast Notification System
@@ -219,6 +315,112 @@
                 behavior: 'smooth'
             });
         });
+
+        // FAB Toggle
+        function toggleFAB() {
+            const fabContainer = document.getElementById('fabContainer');
+            fabContainer.classList.toggle('active');
+        }
+
+        // Close FAB when clicking outside
+        document.addEventListener('click', function(e) {
+            const fabContainer = document.getElementById('fabContainer');
+            if (fabContainer && !fabContainer.contains(e.target)) {
+                fabContainer.classList.remove('active');
+            }
+        });
+
+        // Keyboard Shortcuts
+        function closeShortcutsModal() {
+            document.getElementById('shortcutsModal').classList.remove('active');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            // Don't trigger shortcuts when typing in inputs
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(e.key.toLowerCase()) {
+                case '?':
+                    e.preventDefault();
+                    document.getElementById('shortcutsModal').classList.toggle('active');
+                    break;
+                case 'a':
+                    e.preventDefault();
+                    window.location.href = "{% url 'add_book' %}";
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    window.location.href = "{% url 'issue_book' %}";
+                    break;
+                case 'r':
+                    e.preventDefault();
+                    window.location.href = "{% url 'return_book' %}";
+                    break;
+                case 't':
+                    e.preventDefault();
+                    toggleTheme();
+                    break;
+                case '/':
+                    e.preventDefault();
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                    break;
+            }
+
+            // Two-key combinations
+            if (e.key.toLowerCase() === 'g') {
+                setTimeout(function() {
+                    document.addEventListener('keydown', function handleH(e2) {
+                        if (e2.key.toLowerCase() === 'h') {
+                            window.location.href = "{% url 'index' %}";
+                        }
+                        document.removeEventListener('keydown', handleH);
+                    });
+                }, 500);
+            }
+        });
+
+        // Close shortcuts modal on overlay click
+        document.getElementById('shortcutsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeShortcutsModal();
+            }
+        });
+
+        // Page Transition on Link Clicks (optional)
+        function showPageTransition() {
+            const transition = document.getElementById('pageTransition');
+            transition.classList.add('active');
+        }
+
+        // Add ripple effect to all buttons with ripple class
+        document.querySelectorAll('.ripple').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = this.querySelector('::before');
+                if (ripple) {
+                    ripple.style.animation = 'none';
+                    setTimeout(() => {
+                        ripple.style.animation = '';
+                    }, 10);
+                }
+            });
+        });
+
+        // Enhanced theme toggle with transition
+        const originalToggleTheme = toggleTheme;
+        toggleTheme = function() {
+            showPageTransition();
+            setTimeout(() => {
+                originalToggleTheme();
+                setTimeout(() => {
+                    document.getElementById('pageTransition').classList.remove('active');
+                }, 300);
+            }, 200);
+        };
     </script>
 
     {% block extra_js %}{% endblock %}

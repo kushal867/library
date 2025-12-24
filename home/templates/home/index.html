@@ -9,21 +9,21 @@
 </div>
 
 <div class="stats-grid">
-    <div class="card-stat">
+    <div class="card-stat stagger-item">
         <h3>Total Books</h3>
-        <p>{{ total_books }}</p>
+        <p><span class="counter" data-target="{{ total_books }}">0</span></p>
     </div>
-    <div class="card-stat">
+    <div class="card-stat stagger-item">
         <h3>Total Copies</h3>
-        <p>{{ total_quantity }}</p>
+        <p><span class="counter" data-target="{{ total_quantity }}">0</span></p>
     </div>
-    <div class="card-stat">
+    <div class="card-stat stagger-item">
         <h3>Issued Books</h3>
-        <p>{{ total_issued }}</p>
+        <p><span class="counter" data-target="{{ total_issued }}">0</span></p>
     </div>
-    <div class="card-stat">
+    <div class="card-stat stagger-item">
         <h3>Available Copies</h3>
-        <p>{{ total_available }}</p>
+        <p><span class="counter" data-target="{{ total_available }}">0</span></p>
     </div>
 </div>
 
@@ -68,11 +68,11 @@
     </div>
 </div>
 
-{% if books %}
+{% if books %} 
 <!-- Grid View -->
 <div class="books-grid" id="booksGrid">
     {% for book in books %}
-    <div class="book-card" data-title="{{ book.name|lower }}" data-author="{{ book.author|lower }}" data-isbn="{{ book.isbn }}" data-category="{{ book.category }}">
+    <div class="book-card card-3d stagger-item" data-title="{{ book.name|lower }}" data-author="{{ book.author|lower }}" data-isbn="{{ book.isbn }}" data-category="{{ book.category }}">
         <div class="book-cover">
             <i class="fas fa-book"></i>
         </div>
@@ -98,7 +98,7 @@
                 </div>
                 <div class="book-actions">
                     <a href="javascript:void(0)" 
-                       class="icon-btn delete-btn" 
+                       class="icon-btn delete-btn ripple" 
                        onclick="confirmDelete({{ book.id }}, '{{ book.name|escapejs }}')"
                        title="Delete Book">
                         <i class="fas fa-trash"></i>
@@ -109,6 +109,7 @@
     </div>
     {% endfor %}
 </div>
+
 
 <!-- List View (Table) -->
 <div class="table-container" id="booksTable" style="display: none;">
@@ -126,7 +127,7 @@
         </thead>
         <tbody id="booksTableBody">
             {% for book in books %}
-            <tr data-title="{{ book.name|lower }}" data-author="{{ book.author|lower }}" data-isbn="{{ book.isbn }}" data-category="{{ book.category }}">
+            <tr class="stagger-item" data-title="{{ book.name|lower }}" data-author="{{ book.author|lower }}" data-isbn="{{ book.isbn }}" data-category="{{ book.category }}">
                 <td><strong>{{ book.name }}</strong></td>
                 <td>{{ book.author }}</td>
                 <td>{{ book.isbn }}</td>
@@ -141,7 +142,7 @@
                 </td>
                 <td>
                     <div class="action-buttons">
-                        <a href="javascript:void(0)" class="btn btn-sm btn-danger" onclick="confirmDelete({{ book.id }}, '{{ book.name|escapejs }}')">
+                        <a href="javascript:void(0)" class="btn btn-sm btn-danger ripple" onclick="confirmDelete({{ book.id }}, '{{ book.name|escapejs }}')">
                             <i class="fas fa-trash"></i> Delete
                         </a>
                     </div>
@@ -339,6 +340,35 @@
     if (urlParams.get('deleted') === 'true') {
         showToast('Book deleted successfully!', 'success');
     }
+
+    // Animated Counter for Statistics
+    function animateCounters() {
+        const counters = document.querySelectorAll('.counter');
+        
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target'));
+            const duration = 2000; // 2 seconds
+            const increment = target / (duration / 16); // 60fps
+            let current = 0;
+            
+            const updateCounter = () => {
+                current += increment;
+                if (current < target) {
+                    counter.textContent = Math.floor(current);
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = target;
+                }
+            };
+            
+            updateCounter();
+        });
+    }
+    
+    // Trigger counter animation on page load
+    window.addEventListener('load', function() {
+        setTimeout(animateCounters, 300);
+    });
 </script>
 
 <style>
