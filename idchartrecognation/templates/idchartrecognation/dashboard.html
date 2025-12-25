@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}Face Recognition Dashboard - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-user-check"></i> Face Recognition System</h1>
+    <p>Enroll students and recognize faces for streamlined library operations</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <p>Enrolled Students</p>
+            <h2>{{ total_enrolled }} / {{ total_students }}</h2>
+            <small>{{ enrollment_percentage|floatformat:1 }}% coverage</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <p>Recent Recognitions</p>
+            <h2>{{ recent_recognitions.count }}</h2>
+            <small>Last 10 attempts</small>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="actions-grid">
+    <a href="{% url 'idchartrecognation:enroll_face' %}" class="action-card">
+        <i class="fas fa-user-plus"></i>
+        <h3>Enroll New Face</h3>
+        <p>Upload ID card to register student's face</p>
+    </a>
+
+    <a href="{% url 'idchartrecognation:recognize_face' %}" class="action-card">
+        <i class="fas fa-camera"></i>
+        <h3>Recognize Face</h3>
+        <p>Identify student using camera or photo</p>
+    </a>
+
+    <a href="{% url 'idchartrecognation:manage_enrollments' %}" class="action-card">
+        <i class="fas fa-cog"></i>
+        <h3>Manage Enrollments</h3>
+        <p>View and manage enrolled students</p>
+    </a>
+</div>
+
+<!-- Recognition Statistics (Last 7 Days) -->
+{% if recognition_stats %}
+<div class="section-card">
+    <h3><i class="fas fa-chart-bar"></i> Recognition Statistics (Last 7 Days)</h3>
+    <div class="stats-list">
+        {% for stat in recognition_stats %}
+        <div class="stat-item">
+            <span class="stat-label">
+                {% if stat.result == 'success' %}
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i> Successful
+                {% elif stat.result == 'no_match' %}
+                    <i class="fas fa-times-circle" style="color: #ef4444;"></i> No Match
+                {% elif stat.result == 'no_face' %}
+                    <i class="fas fa-exclamation-circle" style="color: #f59e0b;"></i> No Face Detected
+                {% else %}
+                    <i class="fas fa-info-circle"></i> {{ stat.result|title }}
+                {% endif %}
+            </span>
+            <span class="stat-value">{{ stat.count }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Enrollments -->
+{% if recent_enrollments %}
+<div class="section-card">
+    <h3><i class="fas fa-history"></i> Recent Enrollments</h3>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Roll No</th>
+                    <th>Branch</th>
+                    <th>Enrolled Date</th>
+                    <th>Quality Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in recent_enrollments %}
+                <tr>
+                    <td>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</td>
+                    <td>{{ enrollment.student.roll_no }}</td>
+                    <td>{{ enrollment.student.branch }}</td>
+                    <td>{{ enrollment.enrolled_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <div class="quality-badge">
+                            {{ enrollment.confidence_score|floatformat:2 }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if enrollment.is_active %}
+                            <span class="badge badge-success">Active</span>
+                        {% else %}
+                            <span class="badge badge-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Recognition Attempts -->
+{% if recent_recognitions %}
+<div class="section-card">
+    <h3><i class="fas fa-search"></i> Recent Recognition Attempts</h3>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Result</th>
+                    <th>Matched Student</th>
+                    <th>Confidence</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_recognitions %}
+                <tr>
+                    <td>{{ log.timestamp|date:"M d, H:i" }}</td>
+                    <td>
+                        {% if log.result == 'success' %}
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Success</span>
+                        {% elif log.result == 'no_match' %}
+                            <span class="badge badge-warning"><i class="fas fa-times"></i> No Match</span>
+                        {% else %}
+                            <span class="badge badge-danger"><i class="fas fa-exclamation"></i> {{ log.result|title }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.matched_student %}
+                            {{ log.matched_student.user.get_full_name|default:log.matched_student.user.username }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.confidence %}
+                            {{ log.confidence|floatformat:3 }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td><small>{{ log.details|truncatewords:10 }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: white;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.stat-content h2 {
+    margin: 0.3rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stat-content small {
+    color: #6b7280;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.action-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+}
+
+.action-card i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.action-card h3 {
+    margin: 0.5rem 0;
+    font-size: 1.3rem;
+}
+
+.action-card p {
+    margin: 0.5rem 0 0;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border-left: 3px solid rgba(102, 126, 234, 0.5);
+}
+
+.stat-value {
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.quality-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

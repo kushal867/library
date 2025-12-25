@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Enroll Face - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-user-plus"></i> Enroll Student Face</h1>
+    <p>Upload ID card image to register a student's face for recognition</p>
+</div>
+
+<div class="form-card">
+    <form method="post" enctype="multipart/form-data" id="enrollForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="{{ form.student.id_for_label }}">
+                <i class="fas fa-user"></i> Select Student
+            </label>
+            {{ form.student }}
+            {% if form.student.errors %}
+                <div class="error-message">{{ form.student.errors.0 }}</div>
+            {% endif %}
+            <small class="help-text">Select an active student without existing face enrollment</small>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.image.id_for_label }}">
+                <i class="fas fa-id-card"></i> ID Card Image
+            </label>
+            <div class="file-upload-wrapper">
+                {{ form.image }}
+                <div id="imagePreview" class="image-preview"></div>
+            </div>
+            {% if form.image.errors %}
+                <div class="error-message">{{ form.image.errors.0 }}</div>
+            {% endif %}
+            <small class="help-text">Upload clear ID card photo (JPG/PNG, max 5MB). Ensure face is visible and well-lit.</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary ripple">
+                <i class="fas fa-check"></i> Enroll Face
+            </button>
+            <a href="{% url 'idchartrecognation:dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Enrolled Students List -->
+{% if enrolled_students %}
+<div class="section-card">
+    <h3><i class="fas fa-users"></i> Currently Enrolled Students ({{ enrolled_students.count }})</h3>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Roll No</th>
+                    <th>Branch</th>
+                    <th>Enrolled Date</th>
+                    <th>Quality Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrolled_students %}
+                <tr>
+                    <td>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</td>
+                    <td>{{ enrollment.student.roll_no }}</td>
+                    <td>{{ enrollment.student.branch }}</td>
+                    <td>{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
+                    <td>
+                        <div class="quality-badge">{{ enrollment.confidence_score|floatformat:2 }}</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.form-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2rem;
+}
+
+.file-upload-wrapper {
+    position: relative;
+}
+
+.image-preview {
+    margin-top: 1rem;
+    min-height: 200px;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+}
+
+.image-preview.empty::before {
+    content: 'Image preview will appear here';
+    color: #6b7280;
+    font-style: italic;
+}
+
+.quality-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+</style>
+
+<script>
+// Image Preview
+document.getElementById('id_image').addEventListener('change', function(e) {
+    const preview = document.getElementById('imagePreview');
+    const file = e.target.files[0];
+    
+    if (file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" alt="ID Card Preview" />`;
+            preview.classList.remove('empty');
+        };
+        
+        reader.readAsDataURL(file);
+    } else {
+        preview.innerHTML = '';
+        preview.classList.add('empty');
+    }
+});
+
+// Form submission loading state
+document.getElementById('enrollForm').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    submitBtn.disabled = true;
+});
+
+// Initialize empty state
+document.getElementById('imagePreview').classList.add('empty');
+</script>
+
+{% endblock %}

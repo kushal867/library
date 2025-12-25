@@ -28,6 +28,8 @@ urlpatterns = [
     # API v1 endpoints
     path('api/v1/', include('home.api_urls')),
     path('api/v1/', include('user.api_urls')),
+    # Face Recognition
+    path('face/', include('idchartrecognation.urls')),
 ]
 
 # Serve media files in development

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Enrollments - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-cog"></i> Manage Face Enrollments</h1>
+    <p>View, activate, and deactivate student face encodings</p>
+</div>
+
+<div class="section-card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Roll No</th>
+                    <th>Branch</th>
+                    <th>Enrolled Date</th>
+                    <th>Last Updated</th>
+                    <th>Quality Score</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrolled_students %}
+                <tr>
+                    <td>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</td>
+                    <td>{{ enrollment.student.roll_no }}</td>
+                    <td>{{ enrollment.student.branch }}</td>
+                    <td>{{ enrollment.enrolled_at|date:"M d, Y H:i" }}</td>
+                    <td>{{ enrollment.updated_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <div class="quality-badge">{{ enrollment.confidence_score|floatformat:2 }}</div>
+                    </td>
+                    <td>
+                        {% if enrollment.is_active %}
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Active</span>
+                        {% else %}
+                            <span class="badge badge-secondary"><i class="fas fa-times"></i> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            {% if enrollment.is_active %}
+                                <form method="post" action="{% url 'idchartrecognation:deactivate_encoding' enrollment.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-icon btn-danger" title="Deactivate" 
+                                            onclick="return confirm('Deactivate this face encoding?')">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'idchartrecognation:activate_encoding' enrollment.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-icon btn-success" title="Activate"
+                                            onclick="return confirm('Activate this face encoding?')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No enrolled students found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="form-actions">
+    <a href="{% url 'idchartrecognation:enroll_face' %}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> Enroll New Student
+    </a>
+    <a href="{% url 'idchartrecognation:dashboard' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<style>
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.btn-icon:hover {
+    transform: scale(1.1);
+}
+
+.btn-icon.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-icon.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-icon.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-icon.btn-success:hover {
+    background: #059669;
+}
+
+.quality-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.text-center {
+    text-align: center;
+    color: #9ca3af;
+    padding: 2rem;
+}
+</style>
+
+{% endblock %}
