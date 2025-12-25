@@ -5,47 +5,110 @@
 {% block content %}
 <div class="page-header">
     <h1><i class="fas fa-user-plus"></i> Enroll Student Face</h1>
-    <p>Upload ID card image to register a student's face for recognition</p>
+    <p>Upload ID card image or use camera to register a student's face for recognition</p>
 </div>
 
-<div class="form-card">
-    <form method="post" enctype="multipart/form-data" id="enrollForm">
-        {% csrf_token %}
-        
-        <div class="form-group">
-            <label for="{{ form.student.id_for_label }}">
-                <i class="fas fa-user"></i> Select Student
-            </label>
-            {{ form.student }}
-            {% if form.student.errors %}
-                <div class="error-message">{{ form.student.errors.0 }}</div>
-            {% endif %}
-            <small class="help-text">Select an active student without existing face enrollment</small>
-        </div>
+<!-- Enrollment Tabs -->
+<div class="enrollment-tabs">
+    <div class="tab-buttons">
+        <button class="tab-button active" onclick="switchTab('camera')">
+            <i class="fas fa-camera"></i> Camera Capture
+        </button>
+        <button class="tab-button" onclick="switchTab('upload')">
+            <i class="fas fa-upload"></i> Upload Photo
+        </button>
+    </div>
 
-        <div class="form-group">
-            <label for="{{ form.image.id_for_label }}">
-                <i class="fas fa-id-card"></i> ID Card Image
-            </label>
-            <div class="file-upload-wrapper">
-                {{ form.image }}
-                <div id="imagePreview" class="image-preview"></div>
+    <!-- Camera Tab -->
+    <div id="cameraTab" class="tab-content active">
+        <div class="form-card">
+            <!-- Student Selection (for camera capture) -->
+            <div class="form-group">
+                <label for="student_select_camera">
+                    <i class="fas fa-user"></i> Select Student
+                </label>
+                <select id="student_select_camera" class="form-control" required>
+                    <option value="">-- Choose a student --</option>
+                    {% for student in form.fields.student.queryset %}
+                        <option value="{{ student.id }}">
+                            {{ student.user.get_full_name|default:student.user.username }} - {{ student.roll_no }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small class="help-text">Select an active student to enroll</small>
             </div>
-            {% if form.image.errors %}
-                <div class="error-message">{{ form.image.errors.0 }}</div>
-            {% endif %}
-            <small class="help-text">Upload clear ID card photo (JPG/PNG, max 5MB). Ensure face is visible and well-lit.</small>
-        </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary ripple">
-                <i class="fas fa-check"></i> Enroll Face
-            </button>
-            <a href="{% url 'idchartrecognation:dashboard' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
+            <div class="webcam-container">
+                <video id="webcam" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <div id="webcamPlaceholder" class="webcam-placeholder">
+                    <i class="fas fa-camera"></i>
+                    <p>Click "Start Camera" to begin</p>
+                </div>
+            </div>
+            
+            <div class="webcam-controls">
+                <button id="startCamera" class="btn btn-primary" onclick="startWebcam()">
+                    <i class="fas fa-video"></i> Start Camera
+                </button>
+                <button id="captureBtn" class="btn btn-success" onclick="capturePhoto()" style="display: none;">
+                    <i class="fas fa-camera"></i> Capture & Enroll
+                </button>
+                <button id="stopCamera" class="btn btn-danger" onclick="stopWebcam()" style="display: none;">
+                    <i class="fas fa-stop"></i> Stop Camera
+                </button>
+            </div>
+            
+            <form method="post" id="webcamForm" style="display: none;">
+                {% csrf_token %}
+                {{ webcam_form.image_data }}
+                <input type="hidden" name="student" id="student_input_camera">
+            </form>
         </div>
-    </form>
+    </div>
+
+    <!-- Upload</div Tab -->
+    <div id="uploadTab" class="tab-content">
+        <div class="form-card">
+            <form method="post" enctype="multipart/form-data" id="enrollForm">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.student.id_for_label }}">
+                        <i class="fas fa-user"></i> Select Student
+                    </label>
+                    {{ form.student }}
+                    {% if form.student.errors %}
+                        <div class="error-message">{{ form.student.errors.0 }}</div>
+                    {% endif %}
+                    <small class="help-text">Select an active student without existing face enrollment</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.image.id_for_label }}">
+                        <i class="fas fa-id-card"></i> ID Card Image
+                    </label>
+                    <div class="file-upload-wrapper">
+                        {{ form.image }}
+                        <div id="imagePreview" class="image-preview"></div>
+                    </div>
+                    {% if form.image.errors %}
+                        <div class="error-message">{{ form.image.errors.0 }}</div>
+                    {% endif %}
+                    <small class="help-text">Upload clear ID card photo (JPG/PNG, max 5MB). Ensure face is visible and well-lit.</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary ripple">
+                        <i class="fas fa-check"></i> Enroll Face
+                    </button>
+                    <a href="{% url 'idchartrecognation:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- Enrolled Students List -->
@@ -82,12 +145,98 @@
 {% endif %}
 
 <style>
+.enrollment-tabs {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+}
+
+.tab-button.active {
+    background: rgba(102, 126, 234, 0.2);
+    color: white;
+    border-bottom: 2px solid #667eea;
+}
+
+.tab-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-content {
+    display: none;
+    padding: 2rem;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.webcam-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto 1.5rem;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+}
+
+#webcam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.webcam-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    color: #6b7280;
+}
+
+.webcam-placeholder i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.webcam-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
 .form-card {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     padding: 2rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 2rem;
 }
 
 .file-upload-wrapper {
@@ -129,35 +278,131 @@
 </style>
 
 <script>
-// Image Preview
-document.getElementById('id_image').addEventListener('change', function(e) {
-    const preview = document.getElementById('imagePreview');
-    const file = e.target.files[0];
+let stream = null;
+
+function switchTab(tab) {
+    // Update buttons
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.tab-button').classList.add('active');
     
-    if (file) {
-        const reader = new FileReader();
+    // Update content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+    
+    // Stop webcam if switching away from camera tab
+    if (tab !== 'camera' && stream) {
+        stopWebcam();
+    }
+}
+
+async function startWebcam() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user', width: 640, height: 480 } 
+        });
         
-        reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="ID Card Preview" />`;
-            preview.classList.remove('empty');
-        };
+        const video = document.getElementById('webcam');
+        video.srcObject = stream;
         
-        reader.readAsDataURL(file);
-    } else {
-        preview.innerHTML = '';
-        preview.classList.add('empty');
+        document.getElementById('webcamPlaceholder').style.display = 'none';
+        document.getElementById('startCamera').style.display = 'none';
+        document.getElementById('captureBtn').style.display = 'inline-block';
+        document.getElementById('stopCamera').style.display = 'inline-block';
+        
+    } catch (error) {
+        alert('Error accessing camera: ' + error.message);
+        console.error('Camera error:', error);
+    }
+}
+
+function stopWebcam() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    const video = document.getElementById('webcam');
+    video.srcObject = null;
+    
+    document.getElementById('webcamPlaceholder').style.display = 'flex';
+    document.getElementById('startCamera').style.display = 'inline-block';
+    document.getElementById('captureBtn').style.display = 'none';
+    document.getElementById('stopCamera').style.display = 'none';
+}
+
+function capturePhoto() {
+    // Validate student selection
+    const studentSelect = document.getElementById('student_select_camera');
+    if (!studentSelect.value) {
+        alert('Please select a student first!');
+        return;
+    }
+    
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
+    
+    // Convert to base64
+    const imageData = canvas.toDataURL('image/jpeg');
+    
+    // Set form data and submit
+    document.getElementById('id_image_data').value = imageData;
+    document.getElementById('student_input_camera').value = studentSelect.value;
+    document.getElementById('webcamForm').submit();
+    
+    // Show loading
+    document.getElementById('captureBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    document.getElementById('captureBtn').disabled = true;
+}
+
+// Upload preview (for file upload tab)
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('id_image');
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const preview = document.getElementById('imagePreview');
+            const file = e.target.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="ID Card Preview" />`;
+                    preview.classList.remove('empty');
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '';
+                preview.classList.add('empty');
+            }
+        });
+        
+        // Initialize empty state
+        document.getElementById('imagePreview').classList.add('empty');
+    }
+    
+    // Form submission loading state
+    const enrollForm = document.getElementById('enrollForm');
+    if (enrollForm) {
+        enrollForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+        });
     }
 });
 
-// Form submission loading state
-document.getElementById('enrollForm').addEventListener('submit', function(e) {
-    const submitBtn = this.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    submitBtn.disabled = true;
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (stream) {
+        stopWebcam();
+    }
 });
-
-// Initialize empty state
-document.getElementById('imagePreview').classList.add('empty');
 </script>
 
 {% endblock %}

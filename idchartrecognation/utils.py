@@ -10,7 +10,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Recognition threshold - lower is more strict
-FACE_MATCH_THRESHOLD = 0.6
+# Increased to 0.65 for more lenient matching (reduces false negatives)
+FACE_MATCH_THRESHOLD = 0.65
 
 
 def extract_face_from_image(image_path, model='hog'):
@@ -114,11 +115,11 @@ def calculate_face_quality(image_path, face_location=None):
             top, right, bottom, left = face_location
             face_size = right - left
         
-        # Quality thresholds
+        # Quality thresholds - relaxed for better acceptance
         is_good_quality = (
-            brightness > 40 and brightness < 220 and  # Not too dark or bright
-            laplacian_var > 100 and  # Sharp enough
-            (face_size == 0 or face_size > 100)  # Face large enough
+            brightness > 30 and brightness < 230 and  # Not too dark or bright (relaxed)
+            laplacian_var > 50 and  # Sharp enough (relaxed from 100)
+            (face_size == 0 or face_size > 80)  # Face large enough (relaxed from 100)
         )
         
         return {

@@ -2,6 +2,9 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from home.models import Student
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class IDCard(models.Model):
@@ -80,7 +83,27 @@ class FaceEncoding(models.Model):
         """
         if not self.encoding_data:
             return None
-        return np.frombuffer(self.encoding_data, dtype=np.float64)
+        
+        # Try to read as float32 first (new format)
+        encoding = np.frombuffer(self.encoding_data, dtype=np.float32)
+        
+        # Check if it's the correct size
+        if encoding.shape[0] == 128:
+            return encoding
+        elif encoding.shape[0] == 256:
+            # This is an old encoding stored as float64
+            # Re-read with correct dtype
+            encoding = np.frombuffer(self.encoding_data, dtype=np.float64)
+            if encoding.shape[0] == 128:
+                # Convert to float32 and update storage
+                encoding_float32 = encoding.astype(np.float32)
+                self.encoding_data = encoding_float32.tobytes()
+                self.save(update_fields=['encoding_data'])
+                return encoding_float32
+        
+        # If we get here, something is wrong with the encoding
+        logger.warning(f"Invalid encoding shape: {encoding.shape} for student {self.student.id}")
+        return None
     
     def clean(self):
         """Validate that only one active encoding exists per student"""

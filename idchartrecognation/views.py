@@ -64,73 +64,58 @@ def enroll_face(request):
     """Enroll a student's face from ID card image"""
     
     if request.method == 'POST':
-        form = IDCardUploadForm(request.POST, request.FILES)
-        
-        if form.is_valid():
-            id_card = form.save(commit=False)
-            id_card.status = 'pending'
-            id_card.save()
+        # Check if it's webcam capture or file upload
+        if 'image_data' in request.POST and request.POST.get('image_data'):
+            # Webcam capture
+            webcam_form = WebcamCaptureForm(request.POST)
             
-            # Process the ID card image
-            try:
-                # Extract face from image
-                result = extract_face_from_image(id_card.image.path)
-                
-                if not result['success']:
-                    id_card.status = 'failed'
-                    id_card.error_message = result['error']
-                    id_card.save()
-                    messages.error(request, f"Failed to process ID card: {result['error']}")
+            if webcam_form.is_valid():
+                # Get student ID from POST data
+                student_id = request.POST.get('student')
+                if not student_id:
+                    messages.error(request, 'Please select a student first.')
                     return redirect('idchartrecognation:enroll_face')
                 
-                # Check face quality
-                quality = calculate_face_quality(id_card.image.path, result['face_location'])
-                
-                if not quality['is_good_quality']:
-                    id_card.status = 'failed'
-                    id_card.error_message = 'Poor image quality. Please upload a clearer image.'
-                    id_card.save()
-                    messages.warning(
-                        request,
-                        f"Image quality is low (brightness: {quality.get('brightness', 0):.0f}, "
-                        f"sharpness: {quality.get('sharpness', 0):.0f}). Please upload a clearer image."
-                    )
+                try:
+                    student = Student.objects.get(id=student_id)
+                except Student.DoesNotExist:
+                    messages.error(request, 'Invalid student selected.')
                     return redirect('idchartrecognation:enroll_face')
                 
-                # Create or update face encoding
-                face_encoding, created = FaceEncoding.objects.get_or_create(
-                    student=id_card.student,
-                    defaults={'id_card': id_card}
+                # Decode base64 image
+                image_data = webcam_form.cleaned_data['image_data']
+                format, imgstr = image_data.split(';base64,')
+                ext = format.split('/')[-1]
+                
+                # Create image file
+                image_file = ContentFile(
+                    base64.b64decode(imgstr),
+                    name=f'id_card_{student.user.username}_{timezone.now().timestamp()}.{ext}'
                 )
                 
-                # Save the encoding
-                face_encoding.save_encoding(result['encoding'])
-                face_encoding.confidence_score = quality.get('sharpness', 0) / 1000.0  # Normalize
-                face_encoding.is_active = True
-                face_encoding.id_card = id_card
-                face_encoding.save()
+                # Create ID card with webcam image
+                id_card = IDCard(student=student, status='pending')
+                id_card.image.save(image_file.name, image_file, save=True)
                 
-                # Update ID card status
-                id_card.status = 'processed'
+                # Process enrollment (same logic as file upload)
+                process_enrollment(request, id_card)
+                return redirect('idchartrecognation:dashboard' if id_card.status == 'processed' else 'idchartrecognation:enroll_face')
+        else:
+            # File upload
+            form = IDCardUploadForm(request.POST, request.FILES)
+            
+            if form.is_valid():
+                id_card = form.save(commit=False)
+                id_card.status = 'pending'
                 id_card.save()
                 
-                messages.success(
-                    request,
-                    f'Successfully enrolled {id_card.student.user.username}! '
-                    f'Face encoding created with quality score: {face_encoding.confidence_score:.2f}'
-                )
-                
-                return redirect('idchartrecognation:dashboard')
-                
-            except Exception as e:
-                logger.error(f"Error processing ID card: {str(e)}")
-                id_card.status = 'failed'
-                id_card.error_message = str(e)
-                id_card.save()
-                messages.error(request, f'Error processing ID card: {str(e)}')
-                return redirect('idchartrecognation:enroll_face')
+                # Process enrollment
+                process_enrollment(request, id_card)
+                return redirect('idchartrecognation:dashboard' if id_card.status == 'processed' else 'idchartrecognation:enroll_face')
     else:
         form = IDCardUploadForm()
+    
+    webcam_form = WebcamCaptureForm()
     
     # Get enrolled students
     enrolled_students = FaceEncoding.objects.filter(
@@ -139,10 +124,90 @@ def enroll_face(request):
     
     context = {
         'form': form,
+        'webcam_form': webcam_form,
         'enrolled_students': enrolled_students,
     }
     
     return render(request, 'idchartrecognation/enroll.html', context)
+
+
+def process_enrollment(request, id_card):
+    """
+    Process ID card for face enrollment
+    
+    Args:
+        request: HTTP request object
+        id_card: IDCard model instance
+    """
+    try:
+        # Extract face from image
+        result = extract_face_from_image(id_card.image.path)
+        
+        if not result['success']:
+            id_card.status = 'failed'
+            id_card.error_message = result['error']
+            id_card.save()
+            messages.error(request, f"Failed to process ID card: {result['error']}")
+            return
+        
+        # Check face quality
+        quality = calculate_face_quality(id_card.image.path, result['face_location'])
+        
+        if not quality['is_good_quality']:
+            id_card.status = 'failed'
+            id_card.error_message = 'Poor image quality. Please upload a clearer image.'
+            id_card.save()
+            
+            # Build detailed error message
+            issues = []
+            brightness = quality.get('brightness', 0)
+            sharpness = quality.get('sharpness', 0)
+            face_size = quality.get('size', 0)
+            
+            if brightness <= 30 or brightness >= 230:
+                issues.append(f"lighting issue (brightness: {brightness:.0f}, need 30-230)")
+            if sharpness <= 50:
+                issues.append(f"image too blurry (sharpness: {sharpness:.0f}, need >50)")
+            if face_size > 0 and face_size <= 80:
+                issues.append(f"face too small ({face_size}px, need >80px)")
+            
+            error_detail = ", ".join(issues) if issues else "multiple quality issues"
+            
+            messages.warning(
+                request,
+                f"Image quality check failed: {error_detail}. Please capture/upload a clearer, well-lit image with a larger face."
+            )
+            return
+        
+        # Create or update face encoding
+        face_encoding, created = FaceEncoding.objects.get_or_create(
+            student=id_card.student,
+            defaults={'id_card': id_card}
+        )
+        
+        # Save the encoding
+        face_encoding.save_encoding(result['encoding'])
+        face_encoding.confidence_score = quality.get('sharpness', 0) / 1000.0  # Normalize
+        face_encoding.is_active = True
+        face_encoding.id_card = id_card
+        face_encoding.save()
+        
+        # Update ID card status
+        id_card.status = 'processed'
+        id_card.save()
+        
+        messages.success(
+            request,
+            f'Successfully enrolled {id_card.student.user.username}! '
+            f'Face encoding created with quality score: {face_encoding.confidence_score:.2f}'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error processing ID card: {str(e)}")
+        id_card.status = 'failed'
+        id_card.error_message = str(e)
+        id_card.save()
+        messages.error(request, f'Error processing ID card: {str(e)}')
 
 
 @login_required
