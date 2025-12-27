@@ -41,6 +41,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Username already exists.')
         return value
     
+    def validate_email(self, value):
+        """Check if email already exists"""
+        if value and User.objects.filter(email=value).exists():
+            raise serializers.ValidationError('Email address already in use.')
+        return value
+    
     def create(self, validated_data):
         """Create user and student profile"""
         # Remove password2 and student fields

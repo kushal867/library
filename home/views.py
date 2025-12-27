@@ -7,64 +7,70 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count, F
 from .models import Book, Student, IssuedBook, Category
 from .forms import IssueBookForm, AddBookForm, ReturnBookForm, EditBookForm
+from django.core.exceptions import ValidationError
 
 @login_required(login_url='/login/')
 def index(request):
     """Home page showing all books with search, filter, and pagination"""
-    # Annotate books with currently_issued count for efficient filtering
-    books_list = Book.objects.all().select_related('category').annotate(
-        currently_issued=Count('issues', filter=Q(issues__returned_date__isnull=True))
+    
+    # Get all books with optimized queries
+    books = Book.objects.select_related('category').prefetch_related(
+        'issues'
+    ).annotate(
+        issued_count=Count('issues', filter=Q(issues__returned_date__isnull=True))
     )
     
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
-        books_list = books_list.filter(
+        books = books.filter(
             Q(name__icontains=search_query) |
             Q(author__icontains=search_query) |
             Q(isbn__icontains=search_query)
         )
     
-    # Filter by category
-    category_filter = request.GET.get('category', '')
-    if category_filter:
-        books_list = books_list.filter(category_id=category_filter)
+    # Category filter
+    category_id = request.GET.get('category')
+    if category_id:
+        books = books.filter(category_id=category_id)
     
-    # Filter by availability - now using database-level filtering
-    availability_filter = request.GET.get('availability', '')
-    if availability_filter == 'available':
-        # Only show books with available copies (quantity > currently_issued)
-        books_list = books_list.filter(quantity__gt=F('currently_issued'))
-    elif availability_filter == 'unavailable':
-        # Show books with no available copies (quantity <= currently_issued)
-        books_list = books_list.filter(quantity__lte=F('currently_issued'))
+    # Availability filter
+    availability = request.GET.get('availability')
+    if availability == 'available':
+        # Filter books that have available copies
+        books = [book for book in books if book.available_quantity() > 0]
+    elif availability == 'unavailable':
+        # Filter books with no available copies
+        books = [book for book in books if book.available_quantity() == 0]
     
-    # Pagination (25 books per page)
-    paginator = Paginator(books_list, 25)
+    # Sort
+    sort_by = request.GET.get('sort', '-date_added')
+    if isinstance(books, list):
+        # If filtered by availability, convert back to queryset
+        book_ids = [book.id for book in books]
+        books = Book.objects.filter(id__in=book_ids).select_related('category')
+    
+    if sort_by in ['name', '-name', 'author', '-author', 'date_added', '-date_added']:
+        books = books.order_by(sort_by)
+    
+    # Pagination
+    paginator = Paginator(books, 12)  # 12 books per page
     page_number = request.GET.get('page')
-    books = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number)
     
-    # Calculate statistics
-    total_books = Book.objects.count()
-    total_quantity = sum(book.quantity for book in Book.objects.all())
-    total_issued = IssuedBook.objects.filter(returned_date__isnull=True).count()
-    total_available = total_quantity - total_issued
-    
-    # Get categories for filter dropdown
-    categories = Category.objects.all()
+    # Get all categories for filter dropdown
+    categories = Category.objects.all().order_by('name')
     
     context = {
-        'books': books,
-        'total_books': total_books,
-        'total_quantity': total_quantity,
-        'total_issued': total_issued,
-        'total_available': total_available,
+        'page_obj': page_obj,
         'categories': categories,
         'search_query': search_query,
-        'category_filter': category_filter,
-        'availability_filter': availability_filter,
+        'selected_category': category_id,
+        'selected_availability': availability,
+        'selected_sort': sort_by,
     }
-    return render(request, "home/index.html", context)
+    
+    return render(request, 'home/index.html', context)
 
 @login_required(login_url='/login/')
 @staff_member_required(login_url='/login/')
@@ -241,20 +247,19 @@ def return_book(request):
 @login_required(login_url='/login/')
 def view_issued_books(request):
     """View all currently issued books with pagination"""
-    issued_books_list = IssuedBook.objects.filter(
+    issued_books = IssuedBook.objects.filter(
         returned_date__isnull=True
-    ).select_related('book', 'student__user')
+    ).select_related(
+        'student__user',
+        'book__category'
+    ).order_by('-issued_date')
     
     # Pagination
-    paginator = Paginator(issued_books_list, 25)
+    paginator = Paginator(issued_books, 20)
     page_number = request.GET.get('page')
-    issued_books = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number)
     
-    context = {
-        'issued_books': issued_books,
-        'total_issued': issued_books_list.count(),
-    }
-    return render(request, "home/issued_books.html", context)
+    return render(request, 'home/issued_books.html', {'page_obj': page_obj})
 
 @login_required(login_url='/login/')
 @staff_member_required(login_url='/login/')
@@ -289,10 +294,14 @@ def delete_book(request, myid):
 def view_overdue_books(request):
     """View all overdue books"""
     from datetime import date
+    
     overdue_books = IssuedBook.objects.filter(
         returned_date__isnull=True,
         expiry_date__lt=date.today()
-    ).select_related('book', 'student__user')
+    ).select_related(
+        'student__user',
+        'book__category'
+    ).order_by('expiry_date')
     
     context = {
         'overdue_books': overdue_books,

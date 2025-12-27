@@ -4,9 +4,12 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from django.db import transaction
 from datetime import timedelta
 import base64
 import io
+import os
+import tempfile
 from PIL import Image
 
 from home.models import Student
@@ -20,6 +23,10 @@ from .utils import (
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Allowed image file extensions
+ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp']
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
 @login_required
@@ -140,6 +147,10 @@ def process_enrollment(request, id_card):
         id_card: IDCard model instance
     """
     try:
+        # Validate image file exists
+        if not os.path.exists(id_card.image.path):
+            raise FileNotFoundError("Image file not found")
+        
         # Extract face from image
         result = extract_face_from_image(id_card.image.path)
         
@@ -148,6 +159,7 @@ def process_enrollment(request, id_card):
             id_card.error_message = result['error']
             id_card.save()
             messages.error(request, f"Failed to process ID card: {result['error']}")
+            logger.warning(f"Face extraction failed for student {id_card.student.id}: {result['error']}")
             return
         
         # Check face quality
@@ -177,33 +189,43 @@ def process_enrollment(request, id_card):
                 request,
                 f"Image quality check failed: {error_detail}. Please capture/upload a clearer, well-lit image with a larger face."
             )
+            logger.info(f"Quality check failed for student {id_card.student.id}: {error_detail}")
             return
         
-        # Create or update face encoding
-        face_encoding, created = FaceEncoding.objects.get_or_create(
-            student=id_card.student,
-            defaults={'id_card': id_card}
-        )
+        # Use transaction to ensure atomicity
+        with transaction.atomic():
+            # Create or update face encoding
+            face_encoding, created = FaceEncoding.objects.get_or_create(
+                student=id_card.student,
+                defaults={'id_card': id_card}
+            )
+            
+            # Save the encoding
+            face_encoding.save_encoding(result['encoding'])
+            face_encoding.confidence_score = quality.get('sharpness', 0) / 1000.0  # Normalize
+            face_encoding.is_active = True
+            face_encoding.id_card = id_card
+            face_encoding.save()
+            
+            # Update ID card status
+            id_card.status = 'processed'
+            id_card.save()
         
-        # Save the encoding
-        face_encoding.save_encoding(result['encoding'])
-        face_encoding.confidence_score = quality.get('sharpness', 0) / 1000.0  # Normalize
-        face_encoding.is_active = True
-        face_encoding.id_card = id_card
-        face_encoding.save()
-        
-        # Update ID card status
-        id_card.status = 'processed'
-        id_card.save()
-        
+        logger.info(f"Successfully enrolled student {id_card.student.id} with quality score {face_encoding.confidence_score:.2f}")
         messages.success(
             request,
             f'Successfully enrolled {id_card.student.user.username}! '
             f'Face encoding created with quality score: {face_encoding.confidence_score:.2f}'
         )
         
+    except FileNotFoundError as e:
+        logger.error(f"File not found during enrollment for student {id_card.student.id}: {str(e)}")
+        id_card.status = 'failed'
+        id_card.error_message = "Image file not found. Please try uploading again."
+        id_card.save()
+        messages.error(request, 'Image file not found. Please try uploading again.')
     except Exception as e:
-        logger.error(f"Error processing ID card: {str(e)}")
+        logger.error(f"Error processing ID card for student {id_card.student.id}: {str(e)}", exc_info=True)
         id_card.status = 'failed'
         id_card.error_message = str(e)
         id_card.save()
@@ -276,21 +298,26 @@ def process_recognition_image(image_file, request):
     recognized_student = None
     confidence = None
     result_message = None
+    temp_path = None
     
     try:
         # Save to temporary file or use in-memory
         if hasattr(image_file, 'temporary_file_path'):
             image_path = image_file.temporary_file_path()
+            temp_path = None  # Don't clean up Django's temp file
         else:
             # Convert to PIL Image for processing
             img = Image.open(image_file)
             
+            # Validate image
+            if img.format.lower() not in ['jpeg', 'jpg', 'png', 'bmp']:
+                raise ValueError(f"Unsupported image format: {img.format}")
+            
             # Save to temporary location
-            import tempfile
-            import os
             temp_dir = tempfile.mkdtemp()
             image_path = os.path.join(temp_dir, 'temp_recognition.jpg')
             img.save(image_path)
+            temp_path = temp_dir
         
         # Extract face from image
         result = extract_face_from_image(image_path)
@@ -302,6 +329,7 @@ def process_recognition_image(image_file, request):
                 details=result['error']
             )
             messages.error(request, f"Recognition failed: {result['error']}")
+            logger.warning(f"Face recognition failed: {result['error']}")
             return None, None, result['error']
         
         if result['num_faces'] > 1:
@@ -313,9 +341,16 @@ def process_recognition_image(image_file, request):
                 request,
                 f"Multiple faces detected ({result['num_faces']}). Using the most prominent one."
             )
+            logger.info(f"Multiple faces detected: {result['num_faces']}")
         
         # Find matching student
         active_encodings = FaceEncoding.objects.filter(is_active=True)
+        
+        if not active_encodings.exists():
+            messages.warning(request, "No students enrolled yet. Please enroll students first.")
+            logger.warning("Recognition attempted with no enrolled students")
+            return None, None, 'no_enrollments'
+        
         match_result = find_matching_student(result['encoding'], active_encodings)
         
         if match_result['found']:
@@ -330,6 +365,7 @@ def process_recognition_image(image_file, request):
                 details=f"Matched against {match_result['num_compared']} enrolled students"
             )
             
+            logger.info(f"Successfully recognized student {recognized_student.id} with confidence {confidence:.3f}")
             messages.success(
                 request,
                 f'Student recognized: {recognized_student.user.get_full_name() or recognized_student.user.username} '
@@ -344,20 +380,38 @@ def process_recognition_image(image_file, request):
                 details=f"No match found among {match_result['num_compared']} enrolled students"
             )
             
+            logger.info(f"No match found. Best confidence: {match_result['confidence']:.3f}")
             messages.warning(
                 request,
                 f'No matching student found. Compared against {match_result["num_compared"]} enrolled students.'
             )
             result_message = 'no_match'
         
+    except ValueError as e:
+        logger.error(f"Validation error during face recognition: {str(e)}")
+        RecognitionLog.objects.create(
+            result='error',
+            details=f"Validation error: {str(e)}"
+        )
+        messages.error(request, f'Invalid image: {str(e)}')
+        result_message = 'error'
     except Exception as e:
-        logger.error(f"Error during face recognition: {str(e)}")
+        logger.error(f"Error during face recognition: {str(e)}", exc_info=True)
         RecognitionLog.objects.create(
             result='error',
             details=str(e)
         )
         messages.error(request, f'Error during recognition: {str(e)}')
         result_message = 'error'
+    finally:
+        # Clean up temporary files
+        if temp_path and os.path.exists(temp_path):
+            try:
+                import shutil
+                shutil.rmtree(temp_path)
+                logger.debug(f"Cleaned up temporary directory: {temp_path}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up temporary directory {temp_path}: {str(e)}")
     
     return recognized_student, confidence, result_message
 

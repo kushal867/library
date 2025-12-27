@@ -1,0 +1,5 @@
+ERROR 2025-12-27 12:01:08,194 views Error during face recognition: 'FaceExtractionResult' object is not subscriptable
+Traceback (most recent call last):
+  File "D:\python aiiii\librarymanagementsystem\idchartrecognation\views.py", line 325, in process_recognition_image
+    if not result['success']:
+TypeError: 'FaceExtractionResult' object is not subscriptable

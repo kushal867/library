@@ -8,6 +8,10 @@ from .serializers import (
     UserRegistrationSerializer, LoginSerializer,
     TokenSerializer, UserSerializer
 )
+from home.serializers import StudentSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterAPIView(APIView):
@@ -101,10 +105,13 @@ class UserProfileAPIView(APIView):
         # Include student profile if exists
         data = serializer.data
         try:
-            from home.serializers import StudentSerializer
-            student_serializer = StudentSerializer(request.user.student)
-            data['student_profile'] = student_serializer.data
-        except:
+            if hasattr(request.user, 'student'):
+                student_serializer = StudentSerializer(request.user.student)
+                data['student_profile'] = student_serializer.data
+            else:
+                data['student_profile'] = None
+        except Exception as e:
+            logger.error(f"Error fetching student profile for user {request.user.id}: {str(e)}")
             data['student_profile'] = None
         
         return Response(data)
