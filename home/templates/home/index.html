@@ -1,387 +1,236 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Dashboard - Library MS{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>Welcome back, {{ request.user.username }}! 👋</h1>
-    <p>Manage your library collection with style and efficiency</p>
+    <h1>Welcome back, {{ request.user.username }}!</h1>
+    <p>Manage your library collection efficiently</p>
 </div>
 
+<!-- Stats -->
 <div class="stats-grid">
-    <div class="card-stat stagger-item">
+    <div class="card-stat">
         <h3>Total Books</h3>
         <p><span class="counter" data-target="{{ total_books }}">0</span></p>
     </div>
-    <div class="card-stat stagger-item">
+    <div class="card-stat">
         <h3>Total Copies</h3>
         <p><span class="counter" data-target="{{ total_quantity }}">0</span></p>
     </div>
-    <div class="card-stat stagger-item">
+    <div class="card-stat">
         <h3>Issued Books</h3>
         <p><span class="counter" data-target="{{ total_issued }}">0</span></p>
     </div>
-    <div class="card-stat stagger-item">
+    <div class="card-stat">
         <h3>Available Copies</h3>
         <p><span class="counter" data-target="{{ total_available }}">0</span></p>
     </div>
 </div>
 
-<!-- Search and Filter Bar -->
+<!-- Search / Filter / Sort -->
 <div class="search-filter-bar">
-    <div class="search-box">
-        <i class="fas fa-search input-icon"></i>
-        <input 
-            type="text" 
-            id="searchInput" 
-            placeholder="Search books by title, author, or ISBN..."
-            oninput="filterBooks()">
-    </div>
-    <select class="filter-select" id="categoryFilter" onchange="filterBooks()">
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="Search by title, author, or ISBN">
+    <select id="categoryFilter">
         <option value="">All Categories</option>
-        <option value="Fiction">Fiction</option>
-        <option value="Non-Fiction">Non-Fiction</option>
-        <option value="Science">Science</option>
-        <option value="History">History</option>
-        <option value="Biography">Biography</option>
-        <option value="Technology">Technology</option>
-        <option value="Philosophy">Philosophy</option>
-        <option value="Literature">Literature</option>
+        {% for c in categories %}
+            <option value="{{ c|lower }}">{{ c }}</option>
+        {% endfor %}
     </select>
-    <select class="filter-select" id="sortSelect" onchange="sortBooks()">
+    <select id="sortSelect">
         <option value="recent">Most Recent</option>
-        <option value="title">Title (A-Z)</option>
-        <option value="author">Author (A-Z)</option>
+        <option value="title">Title (A–Z)</option>
+        <option value="author">Author (A–Z)</option>
     </select>
 </div>
 
 <!-- View Toggle -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h2><i class="fas fa-book-open"></i> Your Books</h2>
+<div class="view-toggle-bar">
+    <h2>Your Books</h2>
     <div class="view-toggle">
-        <div class="view-btn active" onclick="switchView('grid')" id="gridViewBtn">
-            <i class="fas fa-th-large"></i> Grid
-        </div>
-        <div class="view-btn" onclick="switchView('list')" id="listViewBtn">
-            <i class="fas fa-list"></i> List
-        </div>
+        <button id="gridViewBtn" onclick="switchView('grid')">Grid</button>
+        <button id="listViewBtn" onclick="switchView('list')">List</button>
     </div>
 </div>
 
-{% if books %} 
-<!-- Grid View -->
+{% if books %}
+<!-- GRID VIEW -->
 <div class="books-grid" id="booksGrid">
-    {% for book in books %}
-    <div class="book-card card-3d stagger-item" data-title="{{ book.name|lower }}" data-author="{{ book.author|lower }}" data-isbn="{{ book.isbn }}" data-category="{{ book.category }}">
-        <div class="book-cover">
-            <i class="fas fa-book"></i>
-        </div>
+{% for book in books %}
+    <div class="book-card"
+         data-title="{{ book.name|lower }}"
+         data-author="{{ book.author|lower }}"
+         data-isbn="{{ book.isbn }}"
+         data-category="{{ book.category|lower }}">
         <div class="book-info">
-            <div class="book-title">{{ book.name }}</div>
-            <div class="book-author">
-                <i class="fas fa-user-edit"></i>
-                {{ book.author }}
-            </div>
-            <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-                <i class="fas fa-barcode"></i> ISBN: {{ book.isbn }}
-            </div>
+            <h4>{{ book.name }}</h4>
+            <p>{{ book.author }}</p>
+            <p>ISBN: {{ book.isbn }}</p>
             <span class="badge">{{ book.category }}</span>
-            
-            <div class="book-meta">
-                <div class="book-availability {% if book.is_available %}available{% else %}unavailable{% endif %}">
-                    <i class="fas fa-{% if book.is_available %}check-circle{% else %}times-circle{% endif %}"></i>
-                    {% if book.is_available %}
-                        {{ book.available_quantity }} Available
-                    {% else %}
-                        Not Available
-                    {% endif %}
-                </div>
-                <div class="book-actions">
-                    <a href="javascript:void(0)" 
-                       class="icon-btn delete-btn ripple" 
-                       onclick="confirmDelete({{ book.id }}, '{{ book.name|escapejs }}')"
-                       title="Delete Book">
-                        <i class="fas fa-trash"></i>
-                    </a>
-                </div>
-            </div>
+
+            <p class="{% if book.is_available %}available{% else %}unavailable{% endif %}">
+                {% if book.is_available %}
+                    {{ book.available_quantity }} Available
+                {% else %}
+                    Not Available
+                {% endif %}
+            </p>
+
+            <button
+                class="delete-btn"
+                data-delete-url="{% url 'delete_book' book.id %}"
+                data-book-name="{{ book.name|escapejs }}"
+                onclick="openDeleteModal(this)">
+                Delete
+            </button>
         </div>
     </div>
-    {% endfor %}
+{% endfor %}
 </div>
 
-
-<!-- List View (Table) -->
-<div class="table-container" id="booksTable" style="display: none;">
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Author</th>
-                <th>ISBN</th>
-                <th>Category</th>
-                <th>Quantity</th>
-                <th>Available</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="booksTableBody">
-            {% for book in books %}
-            <tr class="stagger-item" data-title="{{ book.name|lower }}" data-author="{{ book.author|lower }}" data-isbn="{{ book.isbn }}" data-category="{{ book.category }}">
-                <td><strong>{{ book.name }}</strong></td>
-                <td>{{ book.author }}</td>
-                <td>{{ book.isbn }}</td>
-                <td><span class="badge">{{ book.category }}</span></td>
-                <td>{{ book.quantity }}</td>
-                <td>
-                    {% if book.is_available %}
-                        <span style="color: #4ade80;">✓ {{ book.available_quantity }}</span>
-                    {% else %}
-                        <span style="color: #f87171;">✗ 0</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div class="action-buttons">
-                        <a href="javascript:void(0)" class="btn btn-sm btn-danger ripple" onclick="confirmDelete({{ book.id }}, '{{ book.name|escapejs }}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </a>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- LIST VIEW -->
+<div id="booksTable" style="display:none">
+<table>
+    <thead>
+        <tr>
+            <th>Title</th><th>Author</th><th>ISBN</th>
+            <th>Category</th><th>Qty</th><th>Available</th><th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="booksTableBody">
+    {% for book in books %}
+        <tr
+            data-title="{{ book.name|lower }}"
+            data-author="{{ book.author|lower }}"
+            data-isbn="{{ book.isbn }}"
+            data-category="{{ book.category|lower }}">
+            <td>{{ book.name }}</td>
+            <td>{{ book.author }}</td>
+            <td>{{ book.isbn }}</td>
+            <td>{{ book.category }}</td>
+            <td>{{ book.quantity }}</td>
+            <td>{{ book.available_quantity }}</td>
+            <td>
+                <button
+                    class="delete-btn"
+                    data-delete-url="{% url 'delete_book' book.id %}"
+                    data-book-name="{{ book.name|escapejs }}"
+                    onclick="openDeleteModal(this)">
+                    Delete
+                </button>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
 </div>
 {% else %}
-<div class="empty-state">
-    <i class="fas fa-book-open"></i>
-    <h3>No books in your library yet</h3>
-    <p>Start building your collection by adding your first book</p>
-    <a href="{% url 'add_book' %}" class="btn">
-        <i class="fas fa-plus-circle"></i> Add Your First Book
-    </a>
-</div>
+<p>No books available.</p>
 {% endif %}
 
-<!-- Delete Confirmation Modal -->
-<div class="modal-overlay" id="deleteModal">
-    <div class="modal">
-        <h3><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
-        <p id="deleteMessage">Are you sure you want to delete this book?</p>
-        <div class="modal-buttons">
-            <button class="btn btn-secondary" onclick="closeDeleteModal()">
-                <i class="fas fa-times"></i> Cancel
-            </button>
-            <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Delete
-            </a>
-        </div>
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="deleteModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+        <h3>Confirm Deletion</h3>
+        <p id="deleteMessage"></p>
+        <form method="post" id="deleteForm">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteModal()">Cancel</button>
+            <button type="submit">Delete</button>
+        </form>
     </div>
 </div>
+
+{% endblock %}
 
 {% block extra_js %}
 <script>
-    // View Switching
-    let currentView = 'grid';
-    
-    function switchView(view) {
-        currentView = view;
-        const gridView = document.getElementById('booksGrid');
-        const listView = document.getElementById('booksTable');
-        const gridBtn = document.getElementById('gridViewBtn');
-        const listBtn = document.getElementById('listViewBtn');
-        
-        if (view === 'grid') {
-            gridView.style.display = 'grid';
-            listView.style.display = 'none';
-            gridBtn.classList.add('active');
-            listBtn.classList.remove('active');
-        } else {
-            gridView.style.display = 'none';
-            listView.style.display = 'block';
-            gridBtn.classList.remove('active');
-            listBtn.classList.add('active');
-        }
-        
+(() => {
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sortSelect = document.getElementById('sortSelect');
+    const grid = document.getElementById('booksGrid');
+    const tableBody = document.getElementById('booksTableBody');
+
+    /* ---------- VIEW ---------- */
+    window.switchView = view => {
         localStorage.setItem('preferredView', view);
-    }
-    
-    // Load preferred view
-    window.addEventListener('DOMContentLoaded', function() {
-        const preferredView = localStorage.getItem('preferredView') || 'grid';
-        switchView(preferredView);
+        document.getElementById('booksGrid').style.display = view === 'grid' ? 'grid' : 'none';
+        document.getElementById('booksTable').style.display = view === 'list' ? 'block' : 'none';
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        switchView(localStorage.getItem('preferredView') || 'grid');
+        animateCounters();
     });
-    
-    // Search and Filter Functionality
-    function filterBooks() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const categoryFilter = document.getElementById('categoryFilter').value;
-        
-        const gridCards = document.querySelectorAll('.book-card');
-        const tableRows = document.querySelectorAll('#booksTableBody tr');
-        
-        // Filter grid cards
-        gridCards.forEach(card => {
-            const title = card.dataset.title;
-            const author = card.dataset.author;
-            const isbn = card.dataset.isbn;
-            const category = card.dataset.category;
-            
-            const matchesSearch = title.includes(searchTerm) || 
-                                author.includes(searchTerm) || 
-                                isbn.includes(searchTerm);
-            const matchesCategory = !categoryFilter || category === categoryFilter;
-            
-            if (matchesSearch && matchesCategory) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
+
+    /* ---------- FILTER + SORT ---------- */
+    function applyFilter() {
+        const term = searchInput.value.toLowerCase();
+        const cat = categoryFilter.value;
+        const sort = sortSelect.value;
+
+        const process = items => {
+            const visible = [];
+            items.forEach(el => {
+                const match =
+                    (el.dataset.title.includes(term) ||
+                     el.dataset.author.includes(term) ||
+                     el.dataset.isbn.includes(term)) &&
+                    (!cat || el.dataset.category === cat);
+                el.style.display = match ? '' : 'none';
+                if (match) visible.push(el);
+            });
+
+            if (sort !== 'recent') {
+                visible.sort((a,b) =>
+                    a.dataset[sort].localeCompare(b.dataset[sort]));
+                visible.forEach(el => el.parentNode.appendChild(el));
             }
-        });
-        
-        // Filter table rows
-        tableRows.forEach(row => {
-            const title = row.dataset.title;
-            const author = row.dataset.author;
-            const isbn = row.dataset.isbn;
-            const category = row.dataset.category;
-            
-            const matchesSearch = title.includes(searchTerm) || 
-                                author.includes(searchTerm) || 
-                                isbn.includes(searchTerm);
-            const matchesCategory = !categoryFilter || category === categoryFilter;
-            
-            if (matchesSearch && matchesCategory) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+        };
+
+        if (grid) process([...grid.children]);
+        if (tableBody) process([...tableBody.children]);
     }
-    
-    // Sort Books
-    function sortBooks() {
-        const sortBy = document.getElementById('sortSelect').value;
-        
-        // Sort grid
-        const gridContainer = document.getElementById('booksGrid');
-        const gridCards = Array.from(gridContainer.querySelectorAll('.book-card'));
-        
-        gridCards.sort((a, b) => {
-            let aVal, bVal;
-            
-            if (sortBy === 'title') {
-                aVal = a.dataset.title;
-                bVal = b.dataset.title;
-            } else if (sortBy === 'author') {
-                aVal = a.dataset.author;
-                bVal = b.dataset.author;
-            } else {
-                return 0; // Keep original order for 'recent'
-            }
-            
-            return aVal.localeCompare(bVal);
-        });
-        
-        gridCards.forEach(card => gridContainer.appendChild(card));
-        
-        // Sort table
-        const tbody = document.getElementById('booksTableBody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        
-        rows.sort((a, b) => {
-            let aVal, bVal;
-            
-            if (sortBy === 'title') {
-                aVal = a.dataset.title;
-                bVal = b.dataset.title;
-            } else if (sortBy === 'author') {
-                aVal = a.dataset.author;
-                bVal = b.dataset.author;
-            } else {
-                return 0;
-            }
-            
-            return aVal.localeCompare(bVal);
-        });
-        
-        rows.forEach(row => tbody.appendChild(row));
-    }
-    
-    // Delete Confirmation
-    function confirmDelete(bookId, bookName) {
-        const modal = document.getElementById('deleteModal');
-        const message = document.getElementById('deleteMessage');
-        const confirmBtn = document.getElementById('confirmDeleteBtn');
-        
-        message.textContent = `Are you sure you want to delete "${bookName}"? This action cannot be undone.`;
-        confirmBtn.href = `/home/delete_book/${bookId}/`;
-        
+
+    searchInput.addEventListener('input', applyFilter);
+    categoryFilter.addEventListener('change', applyFilter);
+    sortSelect.addEventListener('change', applyFilter);
+
+    /* ---------- DELETE ---------- */
+    const modal = document.getElementById('deleteModal');
+    const msg = document.getElementById('deleteMessage');
+    const form = document.getElementById('deleteForm');
+
+    window.openDeleteModal = btn => {
+        msg.textContent = `Delete "${btn.dataset.bookName}" permanently?`;
+        form.action = btn.dataset.deleteUrl;
         modal.classList.add('active');
-    }
-    
-    function closeDeleteModal() {
-        const modal = document.getElementById('deleteModal');
-        modal.classList.remove('active');
-    }
-    
-    // Close modal on overlay click
-    document.getElementById('deleteModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeDeleteModal();
-        }
-    });
-    
-    // Show success message if book added/deleted
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('added') === 'true') {
-        showToast('Book added successfully!', 'success');
-    }
-    if (urlParams.get('deleted') === 'true') {
-        showToast('Book deleted successfully!', 'success');
-    }
+    };
 
-    // Animated Counter for Statistics
+    window.closeDeleteModal = () => modal.classList.remove('active');
+
+    /* ---------- COUNTERS ---------- */
     function animateCounters() {
-        const counters = document.querySelectorAll('.counter');
-        
-        counters.forEach(counter => {
-            const target = parseInt(counter.getAttribute('data-target'));
-            const duration = 2000; // 2 seconds
-            const increment = target / (duration / 16); // 60fps
-            let current = 0;
-            
-            const updateCounter = () => {
-                current += increment;
-                if (current < target) {
-                    counter.textContent = Math.floor(current);
-                    requestAnimationFrame(updateCounter);
-                } else {
-                    counter.textContent = target;
-                }
+        document.querySelectorAll('.counter').forEach(c => {
+            const target = +c.dataset.target;
+            if (!target) return c.textContent = '0';
+            let cur = 0;
+            const step = target / 60;
+            const tick = () => {
+                cur += step;
+                if (cur < target) {
+                    c.textContent = Math.floor(cur);
+                    requestAnimationFrame(tick);
+                } else c.textContent = target;
             };
-            
-            updateCounter();
+            tick();
         });
     }
-    
-    // Trigger counter animation on page load
-    window.addEventListener('load', function() {
-        setTimeout(animateCounters, 300);
-    });
+})();
 </script>
-
-<style>
-    .badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(240, 147, 251, 0.2));
-        border: 1px solid rgba(240, 147, 251, 0.3);
-        color: var(--accent);
-        display: inline-block;
-    }
-</style>
-{% endblock %}
-
 {% endblock %}
