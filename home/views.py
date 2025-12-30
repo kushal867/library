@@ -6,10 +6,11 @@ from django.db import IntegrityError, transaction, models
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, F, Sum, Avg
 from django.http import JsonResponse, HttpResponse
+from django.utils import timezone
 from .models import Book, Student, IssuedBook, Category
 from .forms import IssueBookForm, AddBookForm, ReturnBookForm, EditBookForm
 from django.core.exceptions import ValidationError
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 import csv
 
 @login_required(login_url='/login/')
@@ -40,18 +41,18 @@ def index(request):
     # Availability filter
     availability = request.GET.get('availability')
     if availability == 'available':
-        # Filter books that have available copies
-        books = [book for book in books if book.available_quantity() > 0]
+        # Filter books that have at least one copy remaining
+        books = books.annotate(
+            available_qty=F('quantity') - Count('issues', filter=Q(issues__returned_date__isnull=True))
+        ).filter(available_qty__gt=0)
     elif availability == 'unavailable':
-        # Filter books with no available copies
-        books = [book for book in books if book.available_quantity() == 0]
+        # Filter books with no copies remaining
+        books = books.annotate(
+            available_qty=F('quantity') - Count('issues', filter=Q(issues__returned_date__isnull=True))
+        ).filter(available_qty__lte=0)
     
     # Sort
     sort_by = request.GET.get('sort', '-date_added')
-    if isinstance(books, list):
-        # If filtered by availability, convert back to queryset
-        book_ids = [book.id for book in books]
-        books = Book.objects.filter(id__in=book_ids).select_related('category')
     
     if sort_by in ['name', '-name', 'author', '-author', 'date_added', '-date_added']:
         books = books.order_by(sort_by)
@@ -64,6 +65,18 @@ def index(request):
     # Get all categories for filter dropdown
     categories = Category.objects.all().order_by('name')
     
+    # Library Statistics for Dashboard
+    total_books = Book.objects.count()
+    total_quantity = Book.objects.aggregate(total=Sum('quantity'))['total'] or 0
+    total_issued = IssuedBook.objects.filter(returned_date__isnull=True).count()
+    total_available = total_quantity - total_issued
+    
+    # Recent & Popular Books
+    recent_books = Book.objects.select_related('category').order_by('-date_added')[:6]
+    popular_books = Book.objects.select_related('category').annotate(
+        issue_count=Count('issues')
+    ).order_by('-issue_count')[:6]
+
     context = {
         'page_obj': page_obj,
         'categories': categories,
@@ -71,6 +84,12 @@ def index(request):
         'selected_category': category_id,
         'selected_availability': availability,
         'selected_sort': sort_by,
+        'total_books': total_books,
+        'total_quantity': total_quantity,
+        'total_issued': total_issued,
+        'total_available': total_available,
+        'recent_books': recent_books,
+        'popular_books': popular_books,
     }
     
     return render(request, 'home/index.html', context)
@@ -214,7 +233,7 @@ def return_book(request):
                     student_name = issued_book.student.user.username
                     
                     # Mark as returned instead of deleting
-                    issued_book.returned_date = date.today()
+                    issued_book.returned_date = timezone.now().date()
                     
                     # Calculate and store fine if overdue
                     if issued_book.is_overdue():
@@ -298,7 +317,7 @@ def view_overdue_books(request):
     
     overdue_books = IssuedBook.objects.filter(
         returned_date__isnull=True,
-        expiry_date__lt=date.today()
+        expiry_date__lt=timezone.now().date()
     ).select_related(
         'student__user',
         'book__category'
@@ -368,7 +387,7 @@ def student_dashboard(request):
     ).count()
     
     # Overdue books
-    overdue_books = current_books.filter(expiry_date__lt=date.today())
+    overdue_books = current_books.filter(expiry_date__lt=timezone.now().date())
     
     # Total fines
     total_fines = IssuedBook.objects.filter(
@@ -413,7 +432,7 @@ def library_statistics(request):
     # Overdue statistics
     overdue_count = IssuedBook.objects.filter(
         returned_date__isnull=True,
-        expiry_date__lt=date.today()
+        expiry_date__lt=timezone.now().date()
     ).count()
     
     # Fine statistics
@@ -499,7 +518,7 @@ def search_books_api(request):
 def export_issued_books(request):
     """Export currently issued books to CSV (staff only)"""
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="issued_books_{date.today()}.csv"'
+    response['Content-Disposition'] = f'attachment; filename="issued_books_{timezone.now().date()}.csv"'
     
     writer = csv.writer(response)
     writer.writerow([

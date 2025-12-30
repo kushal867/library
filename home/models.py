@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
-from datetime import datetime, timedelta
+from django.utils import timezone
 import re
 
 class Category(models.Model):
@@ -54,7 +54,7 @@ class Book(models.Model):
         
         # Validate publication year is not in future
         if self.publication_year:
-            current_year = datetime.now().year
+            current_year = timezone.now().year
             if self.publication_year > current_year:
                 raise ValidationError({
                     'publication_year': f'Publication year cannot be in the future (current year: {current_year})'
@@ -121,7 +121,7 @@ class Student(models.Model):
         return IssuedBook.objects.filter(
             student=self,
             returned_date__isnull=True,
-            expiry_date__lt=datetime.today().date()
+            expiry_date__lt=timezone.now().date()
         )
     
     def total_fines(self):
@@ -150,18 +150,19 @@ class IssuedBook(models.Model):
     def save(self, *args, **kwargs):
         # Set expiry date on creation if not already set
         if not self.expiry_date:
-            self.expiry_date = datetime.today().date() + timedelta(days=14)
+            from datetime import timedelta
+            self.expiry_date = timezone.now().date() + timedelta(days=14)
         super().save(*args, **kwargs)
     
     def is_overdue(self):
         """Check if the book is overdue (and not yet returned)"""
         if self.returned_date:
             return False
-        return datetime.today().date() > self.expiry_date
+        return timezone.now().date() > self.expiry_date
     
     def days_until_due(self):
         """Calculate days until due (negative if overdue)"""
-        delta = self.expiry_date - datetime.today().date()
+        delta = self.expiry_date - timezone.now().date()
         return delta.days
     
     def calculate_fine(self):

@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Dict, Any
 from django.db.models import Sum, Count, Q
 from datetime import date
+from django.utils import timezone
 
 
 def calculate_fine_amount(days_overdue, fine_per_day=5):
@@ -69,7 +70,7 @@ def generate_library_statistics():
     total_issues_all_time = IssuedBook.objects.count()
     overdue_books = IssuedBook.objects.filter(
         returned_date__isnull=True,
-        expiry_date__lt=date.today()
+        expiry_date__lt=timezone.now().date()
     ).count()
     
     # Student statistics
@@ -81,7 +82,7 @@ def generate_library_statistics():
     unpaid_fines = 0
     overdue_issues = IssuedBook.objects.filter(
         returned_date__isnull=True,
-        expiry_date__lt=date.today()
+        expiry_date__lt=timezone.now().date()
     )
     for issue in overdue_issues:
         fine = issue.calculate_fine()
