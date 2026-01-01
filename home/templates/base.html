@@ -394,11 +394,29 @@
             }
         });
 
-        // Page Transition on Link Clicks (optional)
+        // Page Transition logic
         function showPageTransition() {
             const transition = document.getElementById('pageTransition');
-            transition.classList.add('active');
+            if (transition) {
+                transition.classList.add('active');
+            }
         }
+
+        // Auto-trigger page transition on internal links
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && 
+                link.href && 
+                link.href.startsWith(window.location.origin) && 
+                !link.href.includes('#') && 
+                !link.target && 
+                !e.ctrlKey && 
+                !e.shiftKey && 
+                !e.metaKey) {
+                
+                showPageTransition();
+            }
+        });
 
         // Add ripple effect to all buttons with ripple class
         document.querySelectorAll('.ripple').forEach(button => {
