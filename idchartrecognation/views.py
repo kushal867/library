@@ -89,20 +89,28 @@ def enroll_face(request):
                     messages.error(request, 'Invalid student selected.')
                     return redirect('idchartrecognation:enroll_face')
                 
-                # Decode base64 image
-                image_data = webcam_form.cleaned_data['image_data']
-                format, imgstr = image_data.split(';base64,')
-                ext = format.split('/')[-1]
-                
-                # Create image file
-                image_file = ContentFile(
-                    base64.b64decode(imgstr),
-                    name=f'id_card_{student.user.username}_{timezone.now().timestamp()}.{ext}'
-                )
-                
-                # Create ID card with webcam image
-                id_card = IDCard(student=student, status='pending')
-                id_card.image.save(image_file.name, image_file, save=True)
+                try:
+                    # Decode base64 image safely
+                    image_data = webcam_form.cleaned_data['image_data']
+                    if ';base64,' not in image_data:
+                        raise ValueError("Invalid image data format")
+                    
+                    format, imgstr = image_data.split(';base64,')
+                    ext = format.split('/')[-1]
+                    
+                    # Create image file
+                    image_file = ContentFile(
+                        base64.b64decode(imgstr),
+                        name=f'id_card_{student.user.username}_{int(timezone.now().timestamp())}.{ext}'
+                    )
+                    
+                    # Create ID card with webcam image
+                    id_card = IDCard(student=student, status='pending')
+                    id_card.image.save(image_file.name, image_file, save=True)
+                except Exception as e:
+                    logger.error(f"Error decoding webcam image for enrollment: {str(e)}")
+                    messages.error(request, f"Error processing webcam capture: {str(e)}")
+                    return redirect('idchartrecognation:enroll_face')
                 
                 # Process enrollment (same logic as file upload)
                 process_enrollment(request, id_card)
@@ -247,22 +255,30 @@ def recognize_face(request):
             webcam_form = WebcamCaptureForm(request.POST)
             
             if webcam_form.is_valid():
-                # Decode base64 image
-                image_data = webcam_form.cleaned_data['image_data']
-                format, imgstr = image_data.split(';base64,')
-                ext = format.split('/')[-1]
-                
-                # Create image file
-                image_file = ContentFile(
-                    base64.b64decode(imgstr),
-                    name=f'webcam_capture_{timezone.now().timestamp()}.{ext}'
-                )
-                
-                # Process the image
-                recognized_student, confidence, recognition_result = process_recognition_image(
-                    image_file,
-                    request
-                )
+                try:
+                    # Decode base64 image safely
+                    image_data = webcam_form.cleaned_data['image_data']
+                    if ';base64,' not in image_data:
+                        raise ValueError("Invalid image data format")
+                    
+                    format, imgstr = image_data.split(';base64,')
+                    ext = format.split('/')[-1]
+                    
+                    # Create image file
+                    image_file = ContentFile(
+                        base64.b64decode(imgstr),
+                        name=f'webcam_capture_{int(timezone.now().timestamp())}.{ext}'
+                    )
+                    
+                    # Process the image
+                    recognized_student, confidence, recognition_result = process_recognition_image(
+                        image_file,
+                        request
+                    )
+                except Exception as e:
+                    logger.error(f"Error decoding webcam image for recognition: {str(e)}")
+                    messages.error(request, f"Error processing webcam capture: {str(e)}")
+                    return redirect('idchartrecognation:recognize_face')
         else:
             # File upload
             form = FaceRecognitionForm(request.POST, request.FILES)

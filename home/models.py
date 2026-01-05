@@ -130,6 +130,16 @@ class Student(models.Model):
         total = sum(book.calculate_fine() for book in overdue_books)
         return total
     
+    @property
+    def has_overdue_books(self):
+        """Quick check if student has any overdue books"""
+        return self.get_overdue_books().exists()
+
+    @property
+    def active_fines(self):
+        """Calculate total unpaid fines for this student"""
+        return self.total_fines()
+
     class Meta:
         ordering = ['user__username']
 
