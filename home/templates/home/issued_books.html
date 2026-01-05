@@ -56,8 +56,14 @@
                     <form method="post" action="{% url 'return_book' %}" style="display: inline;">
                         {% csrf_token %}
                         <input type="hidden" name="issued_book" value="{{ issued.id }}">
-                        <button type="submit" class="btn btn-sm" style="padding: 0.4rem 0.8rem;">
+                        <button type="submit" class="btn btn-sm ripple" style="padding: 0.4rem 0.8rem; background: var(--secondary);">
                             <i class="fas fa-undo"></i> Return
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'renew_book' issued.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm ripple" style="padding: 0.4rem 0.8rem; background: var(--accent);">
+                            <i class="fas fa-redo"></i> Renew
                         </button>
                     </form>
                 </td>
