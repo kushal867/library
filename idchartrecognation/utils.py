@@ -70,6 +70,29 @@ def load_image(image_input: Union[str, Path, Image.Image, np.ndarray]) -> Option
         return None
 
 
+def enhance_image(image: np.ndarray) -> np.ndarray:
+    """
+    Enhance face image for better recognition
+    Applies CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    """
+    try:
+        # Convert to LAB color space
+        lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+        l, a, b = cv2.split(lab)
+        
+        # Apply CLAHE to L-channel
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        cl = clahe.apply(l)
+        
+        # Merge channels and convert back to RGB
+        limg = cv2.merge((cl,a,b))
+        enhanced = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+        return enhanced
+    except Exception as e:
+        logger.warning(f"Image enhancement failed: {str(e)}")
+        return image
+
+
 def extract_face_from_image(
     image_path: Union[str, Path, Image.Image],
     model: str = 'hog',
@@ -97,34 +120,46 @@ def extract_face_from_image(
                 error='Could not load image'
             )
         
+        # Enhance image for detection
+        enhanced_image = enhance_image(image)
+        
         # Find face locations
-        face_locations = face_recognition.face_locations(image, model=model)
+        # Try CNN model if requested, fallback to HOG if it fails
+        try:
+            face_locations = face_recognition.face_locations(enhanced_image, model=model)
+        except Exception as e:
+            if model == 'cnn':
+                logger.warning("CNN model failed, falling back to HOG")
+                face_locations = face_recognition.face_locations(enhanced_image, model='hog')
+            else:
+                raise e
         
         if len(face_locations) == 0:
             return FaceExtractionResult(
                 success=False,
-                error='No face detected in the image',
+                error='No face detected in the image. Please ensure your face is clearly visible.',
                 num_faces=0
             )
         
         # Handle multiple faces
         if len(face_locations) > 1:
             logger.warning(f"Multiple faces detected ({len(face_locations)}), using the largest one")
-            face_locations = [_get_largest_face(face_locations)]
-        
-        face_location = face_locations[0]
+            face_location = _get_largest_face(face_locations)
+        else:
+            face_location = face_locations[0]
         
         # Generate face encoding with jittering for better accuracy
+        # Always use the enhanced image for encoding as well
         face_encodings = face_recognition.face_encodings(
-            image, 
-            face_locations,
-            num_jitters=num_jitters
+            enhanced_image, 
+            [face_location],
+            num_jitters=max(num_jitters, 2)  # Ensure at least 2 jitters for better stability
         )
         
         if len(face_encodings) == 0:
             return FaceExtractionResult(
                 success=False,
-                error='Could not generate face encoding',
+                error='Could not generate face stable encoding. Try again with better lighting.',
                 num_faces=len(face_locations)
             )
         
