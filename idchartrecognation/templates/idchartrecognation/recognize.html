@@ -146,251 +146,212 @@
 </div>
 
 <style>
+:root {
+    --primary: #6366f1;
+    --success: #10b981;
+    --danger: #ef4444;
+}
+
 .recognition-result {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    border: 2px solid;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
-    gap: 1.5rem;
+    gap: 2rem;
     align-items: center;
+    backdrop-filter: blur(10px);
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .recognition-result.success {
-    border-color: #10b981;
+    border-color: var(--success);
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
 }
 
 .recognition-result.fail {
-    border-color: #ef4444;
+    border-color: var(--danger);
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
 }
 
 .result-icon {
-    font-size: 4rem;
+    font-size: 5rem;
+    filter: drop-shadow(0 0 10px currentColor);
 }
 
-.success .result-icon { color: #10b981; }
-.fail .result-icon { color: #ef4444; }
+.success .result-icon { color: var(--success); }
+.fail .result-icon { color: var(--danger); }
 
-.result-content {
-    flex: 1;
-}
-
-.result-content h2 {
-    margin: 0 0 1rem 0;
-}
+.result-content { flex: 1; }
+.result-content h2 { margin: 0 0 1rem 0; font-weight: 700; }
 
 .student-info {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.3);
     padding: 1.5rem;
-    border-radius: 8px;
-    margin: 1rem 0;
-}
-
-.student-info h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.25rem;
 }
 
-.info-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.info-item i {
-    color: #667eea;
-}
-
-.result-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
+.info-item { display: flex; align-items: center; gap: 0.75rem; }
+.info-item i { color: var(--primary); width: 20px; text-align: center; }
 
 .recognition-tabs {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     overflow: hidden;
+    backdrop-filter: blur(5px);
 }
 
-.tab-buttons {
-    display: flex;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
+.tab-buttons { display: flex; background: rgba(0, 0, 0, 0.2); }
 
 .tab-button {
     flex: 1;
-    padding: 1rem;
+    padding: 1.25rem;
     background: transparent;
     border: none;
     color: #9ca3af;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
 }
 
 .tab-button.active {
-    background: rgba(102, 126, 234, 0.2);
+    background: rgba(99, 102, 241, 0.15);
     color: white;
-    border-bottom: 2px solid #667eea;
-}
-
-.tab-button:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.tab-content {
-    display: none;
-    padding: 2rem;
-}
-
-.tab-content.active {
-    display: block;
+    box-shadow: inset 0 -3px 0 var(--primary);
 }
 
 .webcam-container {
     position: relative;
     width: 100%;
-    max-width: 640px;
-    margin: 0 auto 1.5rem;
+    max-width: 800px;
+    margin: 0 auto 2rem;
     background: #000;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
-    aspect-ratio: 4/3;
+    aspect-ratio: 16/9;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 
 #webcam {
-    width: 100%;
-    height: 100%;
+    width: 633px;
+    height: 480px;
     object-fit: cover;
+    transition: opacity 0.5s ease;
 }
 
 .webcam-placeholder {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.8);
-    color: #6b7280;
+    background: linear-gradient(45deg, #0f172a, #1e293b);
+    color: #475569;
 }
 
-.webcam-placeholder i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.webcam-controls {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.upload-form {
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.image-preview {
-    margin-top: 1rem;
-    min-height: 300px;
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-}
-
-.image-preview img {
-    max-width: 100%;
-    max-height: 400px;
-    border-radius: 8px;
-}
-
-.image-preview.empty::before {
-    content: 'Image preview will appear here';
-    color: #6b7280;
-    font-style: italic;
-}
-/* Scanning Effect */
 .scan-line {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 4px;
-    background: linear-gradient(to right, transparent, #667eea, transparent);
-    box-shadow: 0 0 15px #667eea, 0 0 30px #667eea;
+    height: 3px;
+    background: linear-gradient(to right, transparent, var(--primary), transparent);
+    box-shadow: 0 0 20px var(--primary);
     z-index: 10;
-    animation: scan 3s linear infinite;
+    animation: scan 4s ease-in-out infinite;
     display: none;
 }
 
 @keyframes scan {
-    0% { top: 0%; opacity: 0; }
-    5% { opacity: 1; }
-    95% { opacity: 1; }
-    100% { top: 100%; opacity: 0; }
-}
-
-.webcam-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
+    0%, 100% { top: 0%; opacity: 0; }
+    10%, 90% { opacity: 1; }
+    50% { top: 100%; }
 }
 
 .overlay-corner {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    border: 3px solid #667eea;
-    opacity: 0.6;
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--primary);
+    opacity: 0.4;
+    transition: all 0.3s ease;
 }
 
-.corner-tl { top: 20px; left: 20px; border-right: 0; border-bottom: 0; }
-.corner-tr { top: 20px; right: 20px; border-left: 0; border-bottom: 0; }
-.corner-bl { bottom: 20px; left: 20px; border-right: 0; border-top: 0; }
-.corner-br { bottom: 20px; right: 20px; border-left: 0; border-top: 0; }
+.corner-tl { top: 30px; left: 30px; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+.corner-tr { top: 30px; right: 30px; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+.corner-bl { bottom: 30px; left: 30px; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+.corner-br { bottom: 30px; right: 30px; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
 
 .face-guideline {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 250px;
-    height: 320px;
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    border-radius: 125px 125px 150px 150px;
+    width: 280px;
+    height: 360px;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 140px 140px 180px 180px;
     display: none;
+    transition: all 0.5s ease;
 }
 
 .face-guideline.active {
     display: block;
-    animation: pulseBorder 2s infinite;
+    animation: pulse 2s infinite;
 }
 
-@keyframes pulseBorder {
-    0%, 100% { border-color: rgba(255, 255, 255, 0.3); box-shadow: none; }
-    50% { border-color: #667eea; box-shadow: 0 0 20px rgba(102, 126, 234, 0.4); }
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+    50% { transform: translate(-50%, -50%) scale(1.02); opacity: 0.8; border-color: var(--primary); }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
 }
+
+.btn-processing {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary { background: var(--primary); color: white; border: none; }
+.btn-primary:hover { background: #4f46e5; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+
+.image-preview img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 
 <script>
@@ -413,25 +374,43 @@ function switchTab(tab) {
 
 async function startWebcam() {
     try {
+        const startBtn = document.getElementById('startCamera');
+        const video = document.getElementById('webcam');
+        
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing...';
+        startBtn.disabled = true;
+
         stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'user', width: 640, height: 480 } 
+            video: { 
+                facingMode: 'user', 
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
         });
         
-        const video = document.getElementById('webcam');
         video.srcObject = stream;
         
-        document.getElementById('webcamPlaceholder').style.display = 'none';
-        document.getElementById('startCamera').style.display = 'none';
-        document.getElementById('captureBtn').style.display = 'inline-block';
-        document.getElementById('stopCamera').style.display = 'inline-block';
-        
-        // Show scanning effect
-        document.getElementById('scanLine').style.display = 'block';
-        document.getElementById('faceGuideline').classList.add('active');
+        video.onloadedmetadata = () => {
+            document.getElementById('webcamPlaceholder').style.display = 'none';
+            video.style.opacity = '1';
+            
+            startBtn.style.display = 'none';
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-video"></i> Start Camera';
+            
+            document.getElementById('captureBtn').style.display = 'inline-block';
+            document.getElementById('stopCamera').style.display = 'inline-block';
+            
+            // Show scanning effect
+            document.getElementById('scanLine').style.display = 'block';
+            document.getElementById('faceGuideline').classList.add('active');
+        };
         
     } catch (error) {
         alert('Error accessing camera: ' + error.message);
         console.error('Camera error:', error);
+        document.getElementById('startCamera').disabled = false;
+        document.getElementById('startCamera').innerHTML = '<i class="fas fa-video"></i> Start Camera';
     }
 }
 
@@ -458,42 +437,65 @@ function capturePhoto() {
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
+    const captureBtn = document.getElementById('captureBtn');
     
+    // Natural dimensions
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0);
     
-    // Convert to base64
-    const imageData = canvas.toDataURL('image/jpeg');
+    // Slight flash effect
+    video.style.filter = 'brightness(1.5) contrast(1.2)';
     
-    // Set form data and submit
-    document.getElementById('id_image_data').value = imageData;
-    document.getElementById('webcamForm').submit();
-    
-    // Show loading
-    document.getElementById('captureBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    document.getElementById('captureBtn').disabled = true;
+    setTimeout(() => {
+        context.drawImage(video, 0, 0);
+        video.style.filter = '';
+        
+        // Convert to base64 high quality
+        const imageData = canvas.toDataURL('image/jpeg', 0.95);
+        
+        // Set form data
+        document.getElementById('id_image_data').value = imageData;
+        
+        // UI Feedback
+        captureBtn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Analyzing Face...';
+        captureBtn.classList.add('btn-processing');
+        captureBtn.disabled = true;
+        document.getElementById('stopCamera').disabled = true;
+        
+        // Submit
+        document.getElementById('webcamForm').submit();
+    }, 150);
 }
 
-// Upload preview
-document.getElementById('id_image').addEventListener('change', function(e) {
-    const preview = document.getElementById('uploadPreview');
-    const file = e.target.files[0];
-    
-    if (file) {
-        const reader = new FileReader();
+// Upload preview with size check
+const uploadInput = document.getElementById('id_image');
+if (uploadInput) {
+    uploadInput.addEventListener('change', function(e) {
+        const preview = document.getElementById('uploadPreview');
+        const file = e.target.files[0];
         
-        reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="Upload Preview" />`;
-            preview.classList.remove('empty');
-        };
-        
-        reader.readAsDataURL(file);
-    } else {
-        preview.innerHTML = '';
-        preview.classList.add('empty');
-    }
-});
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File is too large. Please select an image under 10MB.');
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            preview.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Upload Preview" style="animation: fadeIn 0.5s ease;" />`;
+                preview.classList.remove('empty');
+            };
+            
+            reader.readAsDataURL(file);
+        } else {
+            preview.innerHTML = '';
+            preview.classList.add('empty');
+        }
+    });
+}
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', function() {
