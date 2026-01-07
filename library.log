@@ -23,3 +23,13 @@ Traceback (most recent call last):
   File "D:\python aiiii\librarymanagementsystem\idchartrecognation\views.py", line 325, in process_recognition_image
     if not result['success']:
 TypeError: 'FaceExtractionResult' object is not subscriptable
+ERROR 2026-01-07 16:07:59,276 views Error during face recognition: 'FaceExtractionResult' object is not subscriptable
+Traceback (most recent call last):
+  File "D:\python aiiii\librarymanagementsystem\idchartrecognation\views.py", line 343, in process_recognition_image
+    if not result['success']:
+TypeError: 'FaceExtractionResult' object is not subscriptable
+ERROR 2026-01-07 16:08:14,407 views Error during face recognition: 'FaceExtractionResult' object is not subscriptable
+Traceback (most recent call last):
+  File "D:\python aiiii\librarymanagementsystem\idchartrecognation\views.py", line 343, in process_recognition_image
+    if not result['success']:
+TypeError: 'FaceExtractionResult' object is not subscriptable

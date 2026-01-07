@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db import transaction
 from django.db import models
 from django.shortcuts import get_object_or_404
-from datetime import date
+from django.utils import timezone
 from .models import Category, Book, Student, IssuedBook
 from .serializers import (
     CategorySerializer, BookSerializer, BookDetailSerializer,
@@ -191,7 +191,7 @@ class IssuedBookViewSet(viewsets.ReadOnlyModelViewSet):
         """Get all overdue books"""
         overdue = self.get_queryset().filter(
             returned_date__isnull=True,
-            expiry_date__lt=date.today()
+            expiry_date__lt=timezone.now().date()
         )
         serializer = self.get_serializer(overdue, many=True)
         return Response(serializer.data)
@@ -255,7 +255,7 @@ class IssuedBookViewSet(viewsets.ReadOnlyModelViewSet):
             try:
                 with transaction.atomic():
                     # Mark as returned
-                    issued_book.returned_date = date.today()
+                    issued_book.returned_date = timezone.now().date()
                     
                     # Calculate and store fine if overdue
                     if issued_book.is_overdue():

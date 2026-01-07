@@ -10,4 +10,5 @@ urlpatterns = [
     path('manage/', views.manage_enrollments, name='manage_enrollments'),
     path('deactivate/<int:encoding_id>/', views.deactivate_encoding, name='deactivate_encoding'),
     path('activate/<int:encoding_id>/', views.activate_encoding, name='activate_encoding'),
+    path('system-status/', views.system_status, name='system_status'),
 ]

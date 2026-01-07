@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.core.files.base import ContentFile
@@ -18,7 +19,8 @@ from .forms import IDCardUploadForm, FaceRecognitionForm, WebcamCaptureForm
 from .utils import (
     extract_face_from_image,
     calculate_face_quality,
-    find_matching_student
+    find_matching_student,
+    run_system_diagnostic
 )
 import logging
 
@@ -495,3 +497,16 @@ def activate_encoding(request, encoding_id):
         return redirect('idchartrecognation:manage_enrollments')
     
     return redirect('idchartrecognation:manage_enrollments')
+
+
+@login_required
+@staff_member_required
+def system_status(request):
+    """View to check system status and diagnostics"""
+    diagnostics = run_system_diagnostic()
+    
+    context = {
+        'diagnostics': diagnostics,
+    }
+    
+    return render(request, 'idchartrecognation/system_status.html', context)

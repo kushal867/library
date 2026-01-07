@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}System Status - Face Recognition{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-microchip"></i> AI System Diagnostics</h1>
+    <p>Real-time health monitoring of face recognition engine and dependencies</p>
+</div>
+
+<div class="status-grid">
+    <!-- Overall Status -->
+    <div class="status-card large {% if diagnostics.overall_status == 'HEALTHY' %}healthy{% else %}warning{% endif %}">
+        <div class="status-header">
+            <div class="status-indicator"></div>
+            <h3>Overall System Health</h3>
+        </div>
+        <div class="status-value">{{ diagnostics.overall_status }}</div>
+        <p>All core components are functioning within normal parameters.</p>
+        <div class="timestamp">Last Scan: {{ diagnostics.timestamp }}</div>
+    </div>
+
+    <!-- System Info -->
+    <div class="status-card">
+        <h3><i class="fas fa-server"></i> Environment</h3>
+        <div class="info-list">
+            <div class="info-item">
+                <span class="label">OS:</span>
+                <span class="value">{{ diagnostics.system.os }} {{ diagnostics.system.os_release }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Python:</span>
+                <span class="value">{{ diagnostics.system.python_version|truncatechars:20 }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Arch:</span>
+                <span class="value">{{ diagnostics.system.architecture }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Models -->
+    <div class="status-card">
+        <h3><i class="fas fa-brain"></i> Neural Models</h3>
+        <div class="info-list">
+            <div class="info-item">
+                <span class="label">Face Models:</span>
+                <span class="value {% if diagnostics.model_check.status == 'OK' %}text-success{% else %}text-danger{% endif %}">
+                    {{ diagnostics.model_check.status }}
+                </span>
+            </div>
+            {% if diagnostics.model_check.error %}
+            <div class="error-detail">{{ diagnostics.model_check.error }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="section-card">
+    <h3><i class="fas fa-cubes"></i> Dependency Matrix</h3>
+    <div class="dependency-grid">
+        {% for name, info in diagnostics.dependencies.items %}
+        <div class="dependency-item {% if info.status == 'OK' %}ok{% else %}missing{% endif %}">
+            <div class="dep-icon">
+                {% if name == 'face_recognition' %}<i class="fas fa-user-shield"></i>
+                {% elif name == 'opencv' %}<i class="fas fa-camera"></i>
+                {% elif name == 'numpy' %}<i class="fas fa-calculator"></i>
+                {% elif name == 'pillow' %}<i class="fas fa-image"></i>
+                {% else %}<i class="fas fa-box"></i>{% endif %}
+            </div>
+            <div class="dep-info">
+                <h4>{{ name|title }}</h4>
+                <div class="dep-status">
+                    <span class="status-dot"></span>
+                    {{ info.status }}
+                    {% if info.version %}<span class="version">v{{ info.version }}</span>{% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.status-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+}
+
+.status-card.large {
+    grid-column: span 1;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.healthy .status-indicator {
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+}
+
+.healthy .status-value { color: #10b981; }
+
+.status-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -1px;
+}
+
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+.info-item .label { color: #94a3b8; }
+.info-item .value { font-weight: 600; }
+
+.dependency-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.dependency-item {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid transparent;
+}
+
+.dependency-item.ok { border-color: rgba(16, 185, 129, 0.2); }
+.dependency-item.missing { border-color: rgba(239, 68, 68, 0.2); }
+
+.dep-icon {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.dep-info h4 { margin: 0; font-size: 1rem; }
+
+.dep-status {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.ok .status-dot { background: #10b981; }
+.missing .status-dot { background: #ef4444; }
+
+.version {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+</style>
+{% endblock %}

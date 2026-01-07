@@ -5,9 +5,10 @@ import face_recognition
 import numpy as np
 from PIL import Image
 import cv2
+from django.utils import timezone
 import logging
 from pathlib import Path
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -485,3 +486,81 @@ def validate_encoding(encoding: np.ndarray) -> bool:
     if np.isnan(encoding).any() or np.isinf(encoding).any():
         return False
     return True
+
+
+def run_system_diagnostic() -> Dict[str, Any]:
+    """
+    Run diagnostic checks on face recognition system dependencies
+    
+    Returns:
+        Dict with status of each component
+    """
+    import sys
+    import platform
+    
+    results = {
+        'timestamp': timezone.now().isoformat() if 'timezone' in globals() else None,
+        'system': {
+            'os': platform.system(),
+            'os_release': platform.release(),
+            'python_version': sys.version,
+            'architecture': platform.architecture()[0],
+        },
+        'dependencies': {}
+    }
+    
+    # Check face_recognition (dlib)
+    try:
+        import face_recognition
+        results['dependencies']['face_recognition'] = {
+            'status': 'OK',
+            'version': getattr(face_recognition, '__version__', 'unknown')
+        }
+    except ImportError:
+        results['dependencies']['face_recognition'] = {'status': 'MISSING'}
+    
+    # Check OpenCV
+    try:
+        import cv2
+        results['dependencies']['opencv'] = {
+            'status': 'OK',
+            'version': cv2.__version__
+        }
+    except ImportError:
+        results['dependencies']['opencv'] = {'status': 'MISSING'}
+        
+    # Check NumPy
+    try:
+        import numpy as np
+        results['dependencies']['numpy'] = {
+            'status': 'OK',
+            'version': np.__version__
+        }
+    except ImportError:
+        results['dependencies']['numpy'] = {'status': 'MISSING'}
+        
+    # Check PIL
+    try:
+        from PIL import Image
+        results['dependencies']['pillow'] = {
+            'status': 'OK',
+            'version': getattr(Image, '__version__', 'unknown')
+        }
+    except ImportError:
+        results['dependencies']['pillow'] = {'status': 'MISSING'}
+        
+    # Check for models/data
+    try:
+        # Check if dlib models can be loaded (implicit)
+        # We can try a small test
+        test_img = np.zeros((100, 100, 3), dtype=np.uint8)
+        face_recognition.face_locations(test_img)
+        results['model_check'] = {'status': 'OK'}
+    except Exception as e:
+        results['model_check'] = {'status': 'ERROR', 'error': str(e)}
+        
+    results['overall_status'] = 'HEALTHY' if all(
+        d.get('status') == 'OK' for d in results['dependencies'].values()
+    ) and results.get('model_check', {}).get('status') == 'OK' else 'UNHEALTHY'
+    
+    return results
