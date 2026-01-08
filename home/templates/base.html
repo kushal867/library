@@ -18,30 +18,34 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <nav class="navbar">
-        <a href="{% url 'index' %}" class="navbar-brand">
-            <i class="fas fa-book-open"></i> Library MS
-        </a>
-        <div class="nav-links">
-            <a href="{% url 'index' %}">
-                <i class="fas fa-home"></i> Dashboard
-            </a>
-            <a href="{% url 'add_book' %}">
-                <i class="fas fa-plus-circle"></i> Add Book
-            </a>
-            <a href="{% url 'issue_book' %}">
-                <i class="fas fa-hand-holding"></i> Issue Book
-            </a>
-            <a href="{% url 'return_book' %}">
-                <i class="fas fa-undo"></i> Return Book
-            </a>
-            <a href="{% url 'view_issued_books' %}">
-                <i class="fas fa-list"></i> Issued Books
-            </a>
-            <a href="{% url 'idchartrecognation:dashboard' %}">
-                <i class="fas fa-user-check"></i> Face Recognition
+        <div class="navbar-left">
+            <a href="{% url 'index' %}" class="navbar-brand">
+                <i class="fas fa-book-reader"></i> <span>Library MS</span>
             </a>
             
-            <!-- Dark Mode Toggle -->
+            <div class="global-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="globalSearchInput" placeholder="Quick find books..." autocomplete="off">
+                <div id="searchResults" class="search-results-dropdown"></div>
+            </div>
+        </div>
+
+        <div class="nav-links">
+            <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}" title="Dashboard">
+                <i class="fas fa-th-large"></i> <span>Dashboard</span>
+            </a>
+            <a href="{% url 'add_book' %}" class="{% if request.resolver_match.url_name == 'add_book' %}active{% endif %}" title="Add Book">
+                <i class="fas fa-plus-circle"></i> <span>Add Book</span>
+            </a>
+            <a href="{% url 'view_issued_books' %}" class="{% if request.resolver_match.url_name == 'view_issued_books' %}active{% endif %}" title="Issued Books">
+                <i class="fas fa-clipboard-list"></i> <span>Issued</span>
+            </a>
+            <a href="{% url 'idchartrecognation:dashboard' %}" class="{% if 'idchartrecognation' in request.resolver_match.namespaces %}active{% endif %}" title="Face Recognition">
+                <i class="fas fa-camera"></i> <span>Face ID</span>
+            </a>
+            
+            <div class="nav-divider"></div>
+            
             <div class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
                 <div class="theme-toggle-slider">
                     <i class="fas fa-moon"></i>
@@ -49,11 +53,27 @@
             </div>
             
             {% if user.is_authenticated %}
-            <a href="{% url 'logout' %}" style="margin-left: auto;">
-                <i class="fas fa-user"></i> {{ user.username }} | Logout
-            </a>
+            <div class="user-menu">
+                <button class="user-menu-trigger" onclick="toggleUserMenu()">
+                    <div class="user-avatar">
+                        {{ user.username|first|upper }}
+                    </div>
+                    <span class="username">{{ user.username }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="{% url 'student_dashboard' %}"><i class="fas fa-user-circle"></i> Profile</a>
+                    <a href="{% url 'library_statistics' %}"><i class="fas fa-chart-line"></i> Statistics</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+            </div>
             {% endif %}
         </div>
+        
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
     </nav>
 
     <!-- Back to Top Button -->
@@ -442,6 +462,73 @@
                 }, 300);
             }, 200);
         };
+        // Global Search Logic
+        const globalSearchInput = document.getElementById('globalSearchInput');
+        const searchResults = document.getElementById('searchResults');
+        let searchTimeout;
+
+        globalSearchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.classList.remove('active');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetch(`/search_books_api/?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        if (data.results.length > 0) {
+                            data.results.forEach(book => {
+                                const div = document.createElement('a');
+                                div.href = `/book/${book.id}/`;
+                                div.className = 'search-result-item';
+                                div.innerHTML = `
+                                    <div class="result-info">
+                                        <div class="result-title">${book.name}</div>
+                                        <div class="result-meta">${book.author} | ${book.category}</div>
+                                    </div>
+                                    <div class="result-badge ${book.available > 0 ? 'available' : 'unavailable'}">
+                                        ${book.available} left
+                                    </div>
+                                `;
+                                searchResults.appendChild(div);
+                            });
+                            searchResults.classList.add('active');
+                        } else {
+                            searchResults.innerHTML = '<div class="search-no-results">No books found</div>';
+                            searchResults.classList.add('active');
+                        }
+                    });
+            }, 300);
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!globalSearchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.remove('active');
+            }
+        });
+
+        // User Menu Toggle
+        function toggleUserMenu() {
+            document.getElementById('userDropdown').classList.toggle('active');
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('mobile-active');
+        }
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                const navLinks = document.querySelector('.nav-links');
+                if (navLinks) navLinks.classList.remove('mobile-active');
+            }
+        });
     </script>
 
     {% block extra_js %}{% endblock %}

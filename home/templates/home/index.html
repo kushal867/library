@@ -4,25 +4,29 @@
 {% block title %}Dashboard - Library MS{% endblock %}
 
 {% block content %}
-<div class="dashboard-hero">
+<div class="dashboard-hero premium-hero">
     <div class="hero-content">
-        <h1>Welcome, {{ request.user.username }}!</h1>
-        <p>Your portal to knowledge and efficient library management.</p>
+        <div class="hero-badge">
+            <i class="fas fa-sparkles"></i> <span>Welcome back, {{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <h1>Elevate Your <span>Knowledge</span></h1>
+        <p>Explore thousands of resources, track your reading journey, and discover your next favorite book with our intelligent management system.</p>
         <div class="hero-actions">
-            <a href="{% url 'issue_book' %}" class="btn btn-primary ripple">
-                <i class="fas fa-hand-holding"></i> Issue Now
+            <a href="{% url 'issue_book' %}" class="btn btn-primary ripple-glow">
+                <i class="fas fa-hand-holding"></i> Issue a Book
             </a>
-            <a href="#browse-section" class="btn btn-outline-primary ripple">
-                <i class="fas fa-search"></i> Browse Collection
+            <a href="#browse-section" class="btn btn-glass ripple">
+                <i class="fas fa-compass"></i> Explore Library
             </a>
         </div>
     </div>
-    <div class="hero-image">
-        <div class="floating-books">
-            <i class="fas fa-book book-1"></i>
-            <i class="fas fa-book book-2"></i>
-            <i class="fas fa-book book-3"></i>
+    <div class="hero-visual">
+        <div class="hero-card-stack">
+            <div class="hero-card card-1"><i class="fas fa-book-medical"></i></div>
+            <div class="hero-card card-2"><i class="fas fa-bookmark"></i></div>
+            <div class="hero-card card-3"><i class="fas fa-star"></i></div>
         </div>
+        <div class="hero-glow"></div>
     </div>
 </div>
 
@@ -70,20 +74,22 @@
 <div class="featured-sections">
     <div class="section-column">
         <div class="section-header">
-            <h3><i class="fas fa-clock"></i> Recently Added</h3>
-            <a href="?sort=-date_added" class="view-all">View All</a>
+            <h3><i class="fas fa-history"></i> Newly Published</h3>
+            <a href="?sort=-date_added" class="view-all">See All <i class="fas fa-arrow-right"></i></a>
         </div>
-        <div class="horizontal-scroll">
+        <div class="mini-grid">
             {% for book in recent_books %}
-            <div class="mini-book-card ripple-active shelf-item" data-url="{% url 'book_detail' book.id %}" onclick="window.location.href=this.dataset.url" style="cursor: pointer;">
-                {% if book.cover_image %}
-                    <img src="{{ book.cover_image.url }}" alt="{{ book.name }}">
-                {% else %}
-                    <div class="placeholder-cover"><i class="fas fa-book"></i></div>
-                {% endif %}
-                <div class="mini-book-info">
-                    <h4>{{ book.name|truncatechars:20 }}</h4>
-                    <p>{{ book.author|truncatechars:15 }}</p>
+            <div class="compact-book-card" data-url="{% url 'book_detail' book.id %}" onclick="window.location.href=this.dataset.url">
+                <div class="compact-cover">
+{% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.name }}">
+                    {% else %}
+                        <div class="placeholder-cover"><i class="fas fa-book"></i></div>
+                    {% endif %}
+                </div>
+                <div class="compact-info">
+                    <h4>{{ book.name|truncatechars:25 }}</h4>
+                    <p>{{ book.author|truncatechars:20 }}</p>
                 </div>
             </div>
             {% endfor %}
@@ -92,20 +98,22 @@
 
     <div class="section-column">
         <div class="section-header">
-            <h3><i class="fas fa-fire"></i> Most Popular</h3>
-            <a href="?sort=popular" class="view-all">View All</a>
+            <h3><i class="fas fa-fire"></i> Reader's Favorites</h3>
+            <a href="?sort=popular" class="view-all">See All <i class="fas fa-arrow-right"></i></a>
         </div>
-        <div class="horizontal-scroll">
+        <div class="mini-grid">
             {% for book in popular_books %}
-            <div class="mini-book-card ripple-active shelf-item" data-url="{% url 'book_detail' book.id %}" onclick="window.location.href=this.dataset.url" style="cursor: pointer;">
-                {% if book.cover_image %}
-                    <img src="{{ book.cover_image.url }}" alt="{{ book.name }}">
-                {% else %}
-                    <div class="placeholder-cover"><i class="fas fa-book"></i></div>
-                {% endif %}
-                <div class="mini-book-info">
-                    <h4>{{ book.name|truncatechars:20 }}</h4>
-                    <p>{{ book.author|truncatechars:15 }}</p>
+            <div class="compact-book-card" data-url="{% url 'book_detail' book.id %}" onclick="window.location.href=this.dataset.url">
+                <div class="compact-cover">
+{% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.name }}">
+                    {% else %}
+                        <div class="placeholder-cover"><i class="fas fa-book"></i></div>
+                    {% endif %}
+                </div>
+                <div class="compact-info">
+                    <h4>{{ book.name|truncatechars:25 }}</h4>
+                    <p>{{ book.author|truncatechars:20 }}</p>
                 </div>
             </div>
             {% endfor %}

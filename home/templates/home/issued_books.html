@@ -15,70 +15,93 @@
     </div>
 </div>
 
-{% if issued_books %}
-<div class="table-container">
-    <table>
+{% if page_obj %}
+<div class="table-container glass-effect">
+    <table class="modern-table">
         <thead>
             <tr>
-                <th>Book Title</th>
-                <th>ISBN</th>
-                <th>Student</th>
-                <th>Branch/Class</th>
-                <th>Issue Date</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th><i class="fas fa-book"></i> Book</th>
+                <th><i class="fas fa-user-graduate"></i> Student</th>
+                <th><i class="fas fa-calendar-plus"></i> Issued</th>
+                <th><i class="fas fa-calendar-check"></i> Due</th>
+                <th><i class="fas fa-info-circle"></i> Status</th>
+                <th><i class="fas fa-tasks"></i> Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for issued in issued_books %}
-            <tr {% if issued.is_overdue %}style="background-color: rgba(248, 113, 113, 0.1);"{% endif %}>
-                <td><strong>{{ issued.book.name }}</strong></td>
-                <td>{{ issued.book.isbn }}</td>
-                <td>{{ issued.student.user.username }}</td>
-                <td>{{ issued.student.branch }} - {{ issued.student.classroom }}</td>
-                <td>{{ issued.issued_date|date:"Y-m-d" }}</td>
-                <td>{{ issued.expiry_date|date:"Y-m-d" }}</td>
+            {% for issued in page_obj %}
+            <tr class="{% if issued.is_overdue %}row-overdue{% endif %}">
+                <td>
+                    <div class="table-book-info">
+                        <strong>{{ issued.book.name }}</strong>
+                        <span class="text-muted">ISBN: {{ issued.book.isbn }}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="table-user-info">
+                        <strong>{{ issued.student.user.username }}</strong>
+                        <span class="text-muted">{{ issued.student.branch }} - {{ issued.student.classroom }}</span>
+                    </div>
+                </td>
+                <td>{{ issued.issued_date|date:"M d, Y" }}</td>
+                <td>{{ issued.expiry_date|date:"M d, Y" }}</td>
                 <td>
                     {% if issued.is_overdue %}
-                        <span style="color: #f87171; font-weight: bold;">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Overdue ({{ issued.days_until_due|add:"-1"|stringformat:"d" }} days)
+                        <span class="status-badge badge-danger">
+                            <i class="fas fa-clock"></i> Overdue
                         </span>
                     {% else %}
-                        <span style="color: #4ade80;">
-                            <i class="fas fa-check-circle"></i> 
-                            Due in {{ issued.days_until_due }} day{{ issued.days_until_due|pluralize }}
+                        <span class="status-badge badge-success">
+                            <i class="fas fa-check"></i> On Time
                         </span>
                     {% endif %}
                 </td>
                 <td>
-                    <form method="post" action="{% url 'return_book' %}" style="display: inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="issued_book" value="{{ issued.id }}">
-                        <button type="submit" class="btn btn-sm ripple" style="padding: 0.4rem 0.8rem; background: var(--secondary);">
-                            <i class="fas fa-undo"></i> Return
-                        </button>
-                    </form>
-                    <form method="post" action="{% url 'renew_book' issued.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm ripple" style="padding: 0.4rem 0.8rem; background: var(--accent);">
-                            <i class="fas fa-redo"></i> Renew
-                        </button>
-                    </form>
+                    <div class="table-actions">
+                        <form method="post" action="{% url 'return_book' %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="issued_book" value="{{ issued.id }}">
+                            <button type="submit" class="action-btn btn-success ripple" title="Return Book">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'renew_book' issued.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn btn-warning ripple" title="Renew Book">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
+        {% endif %}
+        
+        <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 {% else %}
-<div class="empty-state">
-    <i class="fas fa-clipboard-list"></i>
+<div class="empty-state glass-effect">
+    <i class="fas fa-clipboard-check"></i>
     <h3>No books currently issued</h3>
-    <p>All books are available in the library</p>
-    <a href="{% url 'issue_book' %}" class="btn">
-        <i class="fas fa-hand-holding"></i> Issue a Book
+    <p>Success! All books are back in their shelves.</p>
+    <a href="{% url 'issue_book' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Issue a New Book
     </a>
 </div>
 {% endif %}
