@@ -201,3 +201,34 @@ class IssuedBook(models.Model):
             models.Index(fields=['book', 'returned_date']),
             models.Index(fields=['expiry_date']),
         ]
+
+class Subject(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=10, unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        ordering = ['name']
+
+class Teacher(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    subjects = models.ManyToManyField(Subject, related_name='teachers')
+    department = models.CharField(max_length=100)
+    phone = models.CharField(
+        max_length=10,
+        validators=[RegexValidator(
+            regex=r'^\d{10}$',
+            message='Phone number must be exactly 10 digits'
+        )]
+    )
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Prof. {self.user.get_full_name() or self.user.username}"
+
+    class Meta:
+        ordering = ['user__last_name', 'user__first_name']
+

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Library MS{% endblock %}
+
+{% block content %}
+<div class="form-container-premium glass-effect">
+    <div class="form-header">
+        <h1><i class="fas fa-user-plus"></i> {{ title }}</h1>
+        <p>Enter faculty member details below</p>
+    </div>
+
+    <form method="post" class="modern-form">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h3 class="section-title">Personal Information</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>First Name</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    {{ form.last_name }}
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    {{ form.email }}
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    {{ form.phone }}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title">Account Details</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Username</label>
+                    {{ form.username }}
+                </div>
+                <div class="form-group">
+                    <label>Password (Default: teacher123)</label>
+                    {{ form.password }}
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    {{ form.department }}
+                </div>
+                <div class="form-group">
+                    <label>Active Status</label>
+                    <div class="checkbox-wrapper">
+                        {{ form.is_active }} <span>Is currently teaching</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title">Subject Assignments</h3>
+            <div class="form-group full-width">
+                <label>Select Subjects (Hold Ctrl to select multiple)</label>
+                {{ form.subjects }}
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <a href="{% url 'teacher_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary ripple-glow">Create Teacher Account</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-container-premium {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 3rem;
+    border-radius: 20px;
+}
+.form-header { text-align: center; margin-bottom: 3rem; }
+.section-title {
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+.form-group { margin-bottom: 1.5rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+.full-width { grid-column: span 2; }
+.checkbox-wrapper { display: flex; align-items: center; gap: 10px; }
+.form-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+</style>
+{% endblock %}

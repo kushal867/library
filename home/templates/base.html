@@ -43,6 +43,12 @@
             <a href="{% url 'idchartrecognation:dashboard' %}" class="{% if 'idchartrecognation' in request.resolver_match.namespaces %}active{% endif %}" title="Face Recognition">
                 <i class="fas fa-camera"></i> <span>Face ID</span>
             </a>
+            <a href="{% url 'subject_list' %}" class="{% if request.resolver_match.url_name == 'subject_list' %}active{% endif %}" title="Subjects">
+                <i class="fas fa-book-open"></i> <span>Subjects</span>
+            </a>
+            <a href="{% url 'teacher_list' %}" class="{% if request.resolver_match.url_name == 'teacher_list' or request.resolver_match.url_name == 'add_teacher' %}active{% endif %}" title="Teachers">
+                <i class="fas fa-chalkboard-teacher"></i> <span>Teachers</span>
+            </a>
             
             <div class="nav-divider"></div>
             

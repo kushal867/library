@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Teachers - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-info">
+        <h1><i class="fas fa-chalkboard-teacher"></i> Teachers</h1>
+        <p>Manage faculty members and their assignments</p>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'add_teacher' %}" class="btn btn-primary ripple">
+            <i class="fas fa-user-plus"></i> Add Teacher
+        </a>
+    </div>
+</div>
+
+<div class="teachers-grid">
+    {% for teacher in teachers %}
+    <div class="modern-card teacher-card glass-effect">
+        <div class="card-status {% if teacher.is_active %}status-online{% else %}status-offline{% endif %}"></div>
+        <div class="teacher-avatar-large">
+            {{ teacher.user.username|first|upper }}
+        </div>
+        <h3>{{ teacher.user.get_full_name|default:teacher.user.username }}</h3>
+        <p class="department"><i class="fas fa-building"></i> {{ teacher.department }}</p>
+        
+        <div class="teacher-meta">
+            <span><i class="fas fa-phone"></i> {{ teacher.phone }}</span>
+            <span><i class="fas fa-envelope"></i> {{ teacher.user.email }}</span>
+        </div>
+
+        <div class="teacher-subjects">
+            {% for subject in teacher.subjects.all %}
+            <span class="subject-tag">{{ subject.code }}</span>
+            {% empty %}
+            <span class="text-muted">No subjects assigned</span>
+            {% endfor %}
+        </div>
+
+        <div class="teacher-actions">
+            <button class="btn btn-glass-sm"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-glass-sm text-danger"><i class="fas fa-trash"></i></button>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <i class="fas fa-users-slash"></i>
+        <h3>No teachers registered</h3>
+        <p>Start by adding faculty members to the system.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.teachers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+.teacher-card {
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+.teacher-card:hover { transform: translateY(-10px); }
+.card-status {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+.status-online { background: #10b981; box-shadow: 0 0 10px #10b981; }
+.status-offline { background: #ef4444; }
+.teacher-avatar-large {
+    width: 80px;
+    height: 80px;
+    background: var(--accent);
+    color: white;
+    font-size: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+.department { color: #6366f1; font-weight: 500; margin-bottom: 1rem; }
+.teacher-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+.teacher-subjects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+.subject-tag {
+    background: rgba(255,255,255,0.05);
+    padding: 2px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.teacher-actions { display: flex; gap: 1rem; justify-content: center; }
+.btn-glass-sm {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-main);
+    padding: 5px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

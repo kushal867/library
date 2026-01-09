@@ -7,11 +7,14 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count, F, Sum, Avg
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
-from .models import Book, Student, IssuedBook, Category
-from .forms import IssueBookForm, AddBookForm, ReturnBookForm, EditBookForm
+from .models import Book, Student, IssuedBook, Category, Subject, Teacher
+from .forms import IssueBookForm, AddBookForm, ReturnBookForm, EditBookForm, SubjectForm, TeacherForm
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 import csv
+import qrcode
+import io
+from django.core.files.base import ContentFile
 
 @login_required(login_url='/login/')
 def index(request):
@@ -645,3 +648,80 @@ def check_book_availability(request, book_id):
             'success': False,
             'error': 'Book not found'
         }, status=404)
+
+# Teacher and Subject Views
+@login_required
+@staff_member_required
+def subject_list(request):
+    subjects = Subject.objects.all()
+    if request.method == "POST":
+        form = SubjectForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Subject added successfully!")
+            return redirect('subject_list')
+    else:
+        form = SubjectForm()
+    return render(request, 'home/subject_list.html', {'subjects': subjects, 'form': form})
+
+@login_required
+@staff_member_required
+def teacher_list(request):
+    teachers = Teacher.objects.select_related('user').prefetch_related('subjects')
+    return render(request, 'home/teacher_list.html', {'teachers': teachers})
+
+@login_required
+@staff_member_required
+def add_teacher(request):
+    if request.method == "POST":
+        form = TeacherForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    user = User.objects.create_user(
+                        username=form.cleaned_data['username'],
+                        email=form.cleaned_data['email'],
+                        password=form.cleaned_data['password'] or 'teacher123',
+                        first_name=form.cleaned_data['first_name'],
+                        last_name=form.cleaned_data['last_name']
+                    )
+                    teacher = form.save(commit=False)
+                    teacher.user = user
+                    teacher.save()
+                    form.save_m2m() # Save subjects
+                    messages.success(request, f"Teacher {user.username} added successfully!")
+                    return redirect('teacher_list')
+            except Exception as e:
+                messages.error(request, f"Error: {e}")
+    else:
+        form = TeacherForm()
+    return render(request, 'home/teacher_form.html', {'form': form, 'title': 'Add Teacher'})
+
+@login_required
+def student_qr_code(request, student_id):
+    """Generate a QR code for a student's identification"""
+    student = get_object_or_404(Student, id=student_id)
+    
+    # Check if user has permission (self or staff)
+    if not request.user.is_staff and request.user.student.id != student.id:
+        return HttpResponse("Unauthorized", status=403)
+    
+    # Create QR code data: student username and a random token/id
+    qr_data = f"STUDENT:{student.user.username}:{student.id}"
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Save to buffer
+    buf = io.BytesIO()
+    img.save(buf)
+    
+    return HttpResponse(buf.getvalue(), content_type="image/png")

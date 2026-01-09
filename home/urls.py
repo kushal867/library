@@ -8,6 +8,12 @@ urlpatterns = [
     path('issue_book/', views.issue_book, name='issue_book'),
     path('return_book/', views.return_book, name='return_book'),
     path('issued_books/', views.view_issued_books, name='view_issued_books'),
-    path('overdue_books/', views.view_overdue_books, name='view_overdue_books'),
+    path('overdue_books/', views.view_overdue_books, name='overdue_books'),
     path('delete_book/<int:myid>/', views.delete_book, name='delete_book'),
+    
+    # Teacher & Subject Management
+    path('subjects/', views.subject_list, name='subject_list'),
+    path('teachers/', views.teacher_list, name='teacher_list'),
+    path('teachers/add/', views.add_teacher, name='add_teacher'),
+    path('student/qr/<int:student_id>/', views.student_qr_code, name='student_qr_code'),
 ]

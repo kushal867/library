@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - Library MS{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-sidebar">
+        <div class="profile-card glass-effect">
+            <div class="profile-avatar">
+                {% if student.image %}
+                    <img src="{{ student.image.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <div class="avatar-placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+            </div>
+            <h2>{{ user.get_full_name|default:user.username }}</h2>
+            <p class="role-badge">Student</p>
+            
+            <div class="profile-details">
+                <div class="detail-item">
+                    <span class="label">Roll No:</span>
+                    <span class="value">{{ student.roll_no }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Branch:</span>
+                    <span class="value">{{ student.branch }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Class:</span>
+                    <span class="value">{{ student.classroom }}</span>
+                </div>
+            </div>
+
+            <div class="qr-section">
+                <h4>Digital ID</h4>
+                <div class="qr-code">
+                    <img src="{% url 'student_qr_code' student.id %}" alt="Student QR Code">
+                </div>
+                <p>Scan for identification</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-main">
+        <div class="stats-row">
+            <div class="stat-box glass-effect">
+                <div class="stat-val">{{ total_books_issued }}</div>
+                <div class="stat-label">Books Borrowed</div>
+            </div>
+            <div class="stat-box glass-effect">
+                <div class="stat-val">{{ current_books.count }}</div>
+                <div class="stat-label">Currently Held</div>
+            </div>
+            <div class="stat-box glass-effect overdue">
+                <div class="stat-val">{{ overdue_books.count }}</div>
+                <div class="stat-label">Overdue</div>
+            </div>
+            <div class="stat-box glass-effect {% if total_fines > 0 %}fine{% endif %}">
+                <div class="stat-val">${{ total_fines }}</div>
+                <div class="stat-label">Total Fines</div>
+            </div>
+        </div>
+
+        <div class="section-card glass-effect mt-4">
+            <h3><i class="fas fa-book-reader"></i> Currently Reading</h3>
+            <div class="current-books-list">
+                {% for issue in current_books %}
+                <div class="issue-item">
+                    <div class="book-info">
+                        <strong>{{ issue.book.name }}</strong>
+                        <span>Due: {{ issue.expiry_date }}</span>
+                    </div>
+                    {% if issue.is_overdue %}
+                    <span class="badge badge-danger">Overdue</span>
+                    {% else %}
+                    <span class="badge badge-success">{{ issue.days_until_due }} days left</span>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p>No books currently issued.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="section-card glass-effect mt-4">
+            <h3><i class="fas fa-history"></i> Borrowing History</h3>
+            <div class="history-list">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Issued</th>
+                            <th>Returned</th>
+                            <th>Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in book_history %}
+                        <tr>
+                            <td>{{ issue.book.name }}</td>
+                            <td>{{ issue.issued_date }}</td>
+                            <td>{{ issue.returned_date }}</td>
+                            <td>${{ issue.fine_amount }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4">No history found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-container { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; margin-top: 2rem; }
+.profile-card { padding: 2rem; text-align: center; border-radius: 20px; }
+.profile-avatar { width: 120px; height: 120px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; border: 4px solid var(--accent); }
+.avatar-placeholder { width: 100%; height: 100%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+.role-badge { background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-block; margin-bottom: 1.5rem; }
+.detail-item { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.9rem; }
+.detail-item .label { color: var(--text-muted); }
+.qr-section { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); }
+.qr-code img { width: 150px; border-radius: 10px; background: white; padding: 10px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.stat-box { padding: 1.5rem; border-radius: 15px; text-align: center; }
+.stat-val { font-size: 1.8rem; font-weight: bold; color: var(--accent); }
+.stat-label { font-size: 0.8rem; color: var(--text-muted); }
+.stat-box.overdue .stat-val { color: #ef4444; }
+.stat-box.fine .stat-val { color: #f59e0b; }
+.section-card { padding: 1.5rem; border-radius: 20px; }
+.issue-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 0.5rem; }
+.book-info { display: flex; flex-direction: column; }
+.badge-danger { background: #ef4444; color: white; }
+.badge-success { background: #10b981; color: white; }
+.mt-4 { margin-top: 1.5rem; }
+</style>
+{% endblock %}

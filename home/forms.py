@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Book, Student, IssuedBook, Category
+from django.contrib.auth.models import User
+from .models import Book, Student, IssuedBook, Category, Subject, Teacher
 
 class AddBookForm(forms.ModelForm):
     """Form for adding new books to the library"""
@@ -202,3 +203,31 @@ class EditBookForm(forms.ModelForm):
             raise ValidationError("Please select a category or enter a new category name.")
         
         return cleaned_data
+
+class SubjectForm(forms.ModelForm):
+    class Meta:
+        model = Subject
+        fields = ['name', 'code', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Mathematics'}),
+            'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'MATH101'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+class TeacherForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    username = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=False)
+
+    class Meta:
+        model = Teacher
+        fields = ['department', 'phone', 'subjects', 'is_active']
+        widgets = {
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'subjects': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
