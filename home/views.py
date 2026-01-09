@@ -471,6 +471,13 @@ def library_statistics(request):
         'book'
     ).order_by('-returned_date')[:10]
     
+    # Prepare JSON data for charts
+    category_data = list(category_stats.values('name', 'book_count'))
+    status_data = {
+        'available': available_copies,
+        'issued': currently_issued
+    }
+
     context = {
         'total_books': total_books,
         'total_copies': total_copies,
@@ -484,6 +491,8 @@ def library_statistics(request):
         'popular_books': popular_books,
         'active_borrowers': active_borrowers,
         'category_stats': category_stats,
+        'category_stats_json': category_data,
+        'status_data_json': status_data,
         'recent_issues': recent_issues,
         'recent_returns': recent_returns,
     }

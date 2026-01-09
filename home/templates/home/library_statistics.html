@@ -88,17 +88,23 @@
     </div>
 </div>
 
+{{ category_stats_json|json_script:"category-data" }}
+{{ status_data_json|json_script:"status-data" }}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const categoryData = JSON.parse(document.getElementById('category-data').textContent);
+    const statusData = JSON.parse(document.getElementById('status-data').textContent);
+
     // Category Chart
     const catCtx = document.getElementById('categoryChart').getContext('2d');
     new Chart(catCtx, {
         type: 'doughnut',
         data: {
-            labels: [{% for stat in category_stats %}'{{ stat.name }}',{% endfor %}],
+            labels: categoryData.map(item => item.name),
             datasets: [{
-                data: [{% for stat in category_stats %}{{ stat.book_count }},{% endfor %}],
+                data: categoryData.map(item => item.book_count),
                 backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
             }]
         },
@@ -115,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: ['Available', 'Issued'],
             datasets: [{
-                data: [{{ available_copies }}, {{ currently_issued }}],
+                data: [statusData.available, statusData.issued],
                 backgroundColor: ['#10b981', '#f59e0b']
             }]
         },

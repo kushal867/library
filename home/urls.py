@@ -16,4 +16,6 @@ urlpatterns = [
     path('teachers/', views.teacher_list, name='teacher_list'),
     path('teachers/add/', views.add_teacher, name='add_teacher'),
     path('student/qr/<int:student_id>/', views.student_qr_code, name='student_qr_code'),
+    path('search_books_api/', views.search_books_api, name='search_books_api'),
 ]
+
