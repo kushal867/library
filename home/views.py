@@ -707,6 +707,74 @@ def add_teacher(request):
     return render(request, 'home/teacher_form.html', {'form': form, 'title': 'Add Teacher'})
 
 @login_required
+@staff_member_required
+def edit_subject(request, pk):
+    subject = get_object_or_404(Subject, pk=pk)
+    if request.method == "POST":
+        form = SubjectForm(request.POST, instance=subject)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Subject '{subject.name}' updated successfully!")
+            return redirect('subject_list')
+    else:
+        form = SubjectForm(instance=subject)
+    return render(request, 'home/subject_form.html', {'form': form, 'title': 'Edit Subject', 'subject': subject})
+
+@login_required
+@staff_member_required
+def delete_subject(request, pk):
+    subject = get_object_or_404(Subject, pk=pk)
+    if request.method == "POST":
+        name = subject.name
+        subject.delete()
+        messages.success(request, f"Subject '{name}' deleted successfully!")
+        return redirect('subject_list')
+    return render(request, 'home/confirm_delete.html', {'object': subject, 'type': 'Subject'})
+
+@login_required
+@staff_member_required
+def edit_teacher(request, pk):
+    teacher = get_object_or_404(Teacher, pk=pk)
+    if request.method == "POST":
+        form = TeacherForm(request.POST, instance=teacher)
+        if form.is_valid():
+            teacher = form.save()
+            # Update User profile also
+            user = teacher.user
+            user.first_name = form.cleaned_data['first_name']
+            user.last_name = form.cleaned_data['last_name']
+            user.email = form.cleaned_data['email']
+            user.save()
+            messages.success(request, f"Teacher {user.username} updated successfully!")
+            return redirect('teacher_list')
+    else:
+        initial_data = {
+            'first_name': teacher.user.first_name,
+            'last_name': teacher.user.last_name,
+            'email': teacher.user.email,
+            'username': teacher.user.username,
+        }
+        form = TeacherForm(instance=teacher, initial=initial_data)
+        # Username should be read-only in edit
+        form.fields['username'].widget.attrs['readonly'] = True
+        form.fields['password'].required = False
+        form.fields['password'].help_text = "Leave empty to keep current password."
+        
+    return render(request, 'home/teacher_form.html', {'form': form, 'title': 'Edit Teacher', 'teacher': teacher})
+
+@login_required
+@staff_member_required
+def delete_teacher(request, pk):
+    teacher = get_object_or_404(Teacher, pk=pk)
+    if request.method == "POST":
+        username = teacher.user.username
+        # Delete the user, which cascades to teacher
+        teacher.user.delete()
+        messages.success(request, f"Teacher {username} and associated user account deleted successfully!")
+        return redirect('teacher_list')
+    return render(request, 'home/confirm_delete.html', {'object': teacher, 'type': 'Teacher'})
+
+@login_required
 def student_qr_code(request, student_id):
     """Generate a QR code for a student's identification"""
     student = get_object_or_404(Student, id=student_id)

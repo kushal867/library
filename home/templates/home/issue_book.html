@@ -7,6 +7,19 @@
     <h2><i class="fas fa-hand-holding-heart"></i> Issue Book</h2>
     <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Assign a book to a library member</p>
     
+    <div id="bookPreview" style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; animation: fadeIn 0.5s ease;">
+        <div style="display: flex; gap: 1.5rem; align-items: start;">
+            <div id="previewCover" style="width: 100px; height: 140px; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-book fa-2x text-muted"></i>
+            </div>
+            <div style="flex-grow: 1;">
+                <h4 id="previewTitle" style="margin: 0 0 0.5rem 0; color: var(--text-main);"></h4>
+                <p id="previewAuthor" style="margin: 0 0 1rem 0; color: var(--text-muted); font-size: 0.9rem;"></p>
+                <div id="previewStatus" class="badge"></div>
+            </div>
+        </div>
+    </div>
+
     <form method="post" id="issueForm">
         {% csrf_token %}
         
@@ -62,7 +75,44 @@
 <script>
     const form = document.getElementById('issueForm');
     const submitButton = document.getElementById('issueButton');
-    
+    const bookSelect = form.querySelector('[name="isbn2"]');
+    const bookPreview = document.getElementById('bookPreview');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewAuthor = document.getElementById('previewAuthor');
+    const previewStatus = document.getElementById('previewStatus');
+    const previewCover = document.getElementById('previewCover');
+
+    bookSelect.addEventListener('change', function() {
+        const isbn = this.value;
+        if (!isbn) {
+            bookPreview.style.display = 'none';
+            return;
+        }
+
+        // Fetch book details via search API (filtering by ISBN)
+        fetch(`/search_books_api/?q=${isbn}`)
+            .then(response => response.json())
+            .then(data => {
+                const book = data.results.find(b => b.isbn === isbn);
+                if (book) {
+                    previewTitle.textContent = book.name;
+                    previewAuthor.textContent = `by ${book.author} | ${book.category}`;
+                    
+                    if (book.available > 0) {
+                        previewStatus.textContent = `${book.available} copies available`;
+                        previewStatus.className = 'badge badge-success';
+                        previewStatus.style.background = '#10b981';
+                    } else {
+                        previewStatus.textContent = 'Out of stock';
+                        previewStatus.className = 'badge badge-danger';
+                        previewStatus.style.background = '#ef4444';
+                    }
+                    
+                    bookPreview.style.display = 'block';
+                }
+            });
+    });
+
     form.addEventListener('submit', function(e) {
         submitButton.classList.add('loading');
         submitButton.disabled = true;

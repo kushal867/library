@@ -15,9 +15,14 @@
             <a href="{% url 'issue_book' %}" class="btn btn-primary ripple-glow">
                 <i class="fas fa-hand-holding"></i> Issue a Book
             </a>
-            <a href="#browse-section" class="btn btn-glass ripple">
-                <i class="fas fa-compass"></i> Explore Library
+            {% if user.is_staff %}
+            <a href="{% url 'teacher_list' %}" class="btn btn-glass ripple">
+                <i class="fas fa-chalkboard-teacher"></i> Faculty
             </a>
+            <a href="{% url 'subject_list' %}" class="btn btn-glass ripple">
+                <i class="fas fa-book-open"></i> Curriculum
+            </a>
+            {% endif %}
         </div>
     </div>
     <div class="hero-visual">

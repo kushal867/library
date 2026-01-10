@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Book, Student, Category, IssuedBook
+from .models import Book, Student, Category, IssuedBook, Subject, Teacher
 
 
 @admin.register(Category)
@@ -112,4 +112,21 @@ class IssuedBookAdmin(admin.ModelAdmin):
             return format_html('<span style="color: red; font-weight: bold;">${}</span>', fine)
         return '$0'
     fine_amount.short_description = 'Fine'
+
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'teacher_count']
+    search_fields = ['name', 'code']
+    
+    def teacher_count(self, obj):
+        return obj.teachers.count()
+    teacher_count.short_description = 'Teachers'
+
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin):
+    list_display = ['user', 'department', 'phone', 'is_active']
+    list_filter = ['department', 'is_active', 'subjects']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'department']
+    filter_horizontal = ['subjects']
 
