@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
@@ -80,6 +81,12 @@ def index(request):
         issue_count=Count('issues')
     ).order_by('-issue_count')[:6]
 
+    # Overdue Books count
+    overdue_count = IssuedBook.objects.filter(
+        returned_date__isnull=True,
+        expiry_date__lt=timezone.now().date()
+    ).count()
+
     context = {
         'page_obj': page_obj,
         'categories': categories,
@@ -91,6 +98,7 @@ def index(request):
         'total_quantity': total_quantity,
         'total_issued': total_issued,
         'total_available': total_available,
+        'overdue_count': overdue_count,
         'recent_books': recent_books,
         'popular_books': popular_books,
     }
