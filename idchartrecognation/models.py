@@ -84,26 +84,39 @@ class FaceEncoding(models.Model):
         if not self.encoding_data:
             return None
         
-        # Try to read as float32 first (new format)
+        # Try to read as float32 first (standard format)
         encoding = np.frombuffer(self.encoding_data, dtype=np.float32)
         
-        # Check if it's the correct size
+        # Check if it's the correct size for float32
         if encoding.shape[0] == 128:
             return encoding
-        elif encoding.shape[0] == 256:
-            # This is an old encoding stored as float64
-            # Re-read with correct dtype
-            encoding = np.frombuffer(self.encoding_data, dtype=np.float64)
-            if encoding.shape[0] == 128:
-                # Convert to float32 and update storage
-                encoding_float32 = encoding.astype(np.float32)
-                self.encoding_data = encoding_float32.tobytes()
-                self.save(update_fields=['encoding_data'])
-                return encoding_float32
+            
+        # If the size is 256, it might be an old float64 encoding
+        if encoding.shape[0] == 256:
+            encoding_64 = np.frombuffer(self.encoding_data, dtype=np.float64)
+            if encoding_64.shape[0] == 128:
+                return encoding_64.astype(np.float32)
         
-        # If we get here, something is wrong with the encoding
         logger.warning(f"Invalid encoding shape: {encoding.shape} for student {self.student.id}")
         return None
+
+    def migrate_to_float32(self):
+        """
+        Migrate old float64 encoding storage to float32 to save space and ensure consistency.
+        Should be called manually or during a background task.
+        """
+        if not self.encoding_data:
+            return False
+            
+        encoding = np.frombuffer(self.encoding_data, dtype=np.float32)
+        if encoding.shape[0] == 256:
+            encoding_64 = np.frombuffer(self.encoding_data, dtype=np.float64)
+            if encoding_64.shape[0] == 128:
+                encoding_32 = encoding_64.astype(np.float32)
+                self.encoding_data = encoding_32.tobytes()
+                self.save(update_fields=['encoding_data'])
+                return True
+        return False
     
     def clean(self):
         """Validate that only one active encoding exists per student"""

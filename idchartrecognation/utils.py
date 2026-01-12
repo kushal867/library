@@ -336,36 +336,26 @@ def find_matching_student(
 ) -> FaceMatchResult:
     """
     Find the best matching student from database encodings
-    
-    Args:
-        face_encoding: numpy array (128,) to match
-        face_encodings_qs: QuerySet of FaceEncoding objects
-        tolerance: float, match threshold
-        min_confidence: Optional minimum confidence score (0-100)
-    
-    Returns:
-        FaceMatchResult object
     """
-    # Get all active encodings
-    known_encodings = []
-    student_map = {}
+    # Fetch all active encodings and map them to students
+    # Using a list of tuples to keep ordering consistent for np.argmin
+    known_data = []
+    for obj in face_encodings_qs.select_related('student__user'):
+        enc = obj.get_encoding()
+        if enc is not None:
+            known_data.append((enc, obj.student))
     
-    for idx, face_enc_obj in enumerate(face_encodings_qs):
-        encoding = face_enc_obj.get_encoding()
-        if encoding is not None:
-            known_encodings.append(encoding)
-            student_map[idx] = face_enc_obj.student
+    if not known_data:
+        return FaceMatchResult(found=False, num_compared=0)
     
-    if len(known_encodings) == 0:
-        return FaceMatchResult(
-            found=False,
-            num_compared=0
-        )
+    known_encodings = [d[0] for d in known_data]
+    student_list = [d[1] for d in known_data]
     
     # Compare faces
     result = compare_faces(known_encodings, face_encoding, tolerance)
     
     if result['best_match_index'] is not None:
+        best_idx = result['best_match_index']
         # Check minimum confidence if specified
         if min_confidence is not None and result['confidence_score'] < min_confidence:
             return FaceMatchResult(
@@ -377,7 +367,7 @@ def find_matching_student(
         
         return FaceMatchResult(
             found=True,
-            student=student_map[result['best_match_index']],
+            student=student_list[best_idx],
             confidence=result['confidence_score'],
             match_distance=result['best_match_distance'],
             num_compared=len(known_encodings)
