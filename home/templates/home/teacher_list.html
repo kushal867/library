@@ -9,6 +9,12 @@
         <h1><i class="fas fa-chalkboard-teacher"></i> Teachers</h1>
         <p>Manage faculty members and their assignments</p>
     </div>
+    <div class="header-search">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="teacherSearch" placeholder="Search teachers..." onkeyup="filterTeachers()">
+        </div>
+    </div>
     <div class="header-actions">
         <a href="{% url 'add_teacher' %}" class="btn btn-primary ripple">
             <i class="fas fa-user-plus"></i> Add Teacher
@@ -127,4 +133,27 @@
     font-size: 0.9rem;
 }
 </style>
+
+{% block extra_js %}
+<script>
+function filterTeachers() {
+    const input = document.getElementById('teacherSearch');
+    const filter = input.value.toLowerCase();
+    const cards = document.querySelectorAll('.teacher-card');
+
+    cards.forEach(card => {
+        const name = card.querySelector('h3').textContent.toLowerCase();
+        const dept = card.querySelector('.department').textContent.toLowerCase();
+        const subjects = card.querySelector('.teacher-subjects').textContent.toLowerCase();
+        
+        if (name.includes(filter) || dept.includes(filter) || subjects.includes(filter)) {
+            card.style.display = "";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+</script>
+{% endblock %}
+
 {% endblock %}

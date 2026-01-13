@@ -9,6 +9,12 @@
         <h1><i class="fas fa-book-open"></i> Subjects</h1>
         <p>Manage courses and academic categories</p>
     </div>
+    <div class="header-search">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="subjectSearch" placeholder="Search subjects..." onkeyup="filterSubjects()">
+        </div>
+    </div>
     <div class="header-actions">
         <button class="btn btn-primary ripple" onclick="document.getElementById('addSubjectModal').classList.add('active')">
             <i class="fas fa-plus"></i> Add Subject
@@ -97,4 +103,31 @@
     margin-right: -8px; border: 2px solid var(--glass-bg);
 }
 </style>
+
+{% block extra_js %}
+<script>
+function filterSubjects() {
+    const input = document.getElementById('subjectSearch');
+    const filter = input.value.toLowerCase();
+    const tbody = document.querySelector('.modern-table tbody');
+    const rows = tbody.getElementsByTagName('tr');
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.cells.length < 2) continue;
+        
+        const code = row.cells[0].textContent.toLowerCase();
+        const name = row.cells[1].textContent.toLowerCase();
+        const desc = row.cells[2].textContent.toLowerCase();
+        
+        if (code.includes(filter) || name.includes(filter) || desc.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    }
+}
+</script>
+{% endblock %}
+
 {% endblock %}
