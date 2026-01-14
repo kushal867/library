@@ -6,64 +6,102 @@
 {% block content %}
 <div class="page-header">
     <div class="header-info">
-        <h1><i class="fas fa-book-open"></i> Subjects</h1>
-        <p>Manage courses and academic categories</p>
+        <h1><i class="fas fa-book-open"></i> Curriculum Management</h1>
+        <p>Organize academic subjects and assign faculty</p>
     </div>
     <div class="header-search">
-        <div class="search-box">
+        <div class="search-box glass-effect">
             <i class="fas fa-search"></i>
-            <input type="text" id="subjectSearch" placeholder="Search subjects..." onkeyup="filterSubjects()">
+            <input type="text" id="subjectSearch" placeholder="Filter by name, code or description..." onkeyup="filterSubjects()">
         </div>
     </div>
     <div class="header-actions">
-        <button class="btn btn-primary ripple" onclick="document.getElementById('addSubjectModal').classList.add('active')">
-            <i class="fas fa-plus"></i> Add Subject
+        <button class="btn btn-primary ripple-glow" onclick="document.getElementById('addSubjectModal').classList.add('active')">
+            <i class="fas fa-plus"></i> Add New Subject
         </button>
     </div>
 </div>
 
+<!-- Subject Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-indigo"><i class="fas fa-layer-group"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Total Subjects</span>
+            <span class="stat-value">{{ subjects.count }}</span>
+        </div>
+    </div>
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-cyan"><i class="fas fa-user-graduate"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Active Courses</span>
+            <span class="stat-value">{{ subjects.count }}</span>
+        </div>
+    </div>
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-amber"><i class="fas fa-chalkboard-teacher"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Assigned Faculty</span>
+            <span class="stat-value" id="assignedFacultyCount">0</span>
+        </div>
+    </div>
+</div>
+
 <div class="subjects-container">
-    <div class="glass-panel">
+    <div class="glass-panel overflow-hidden">
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Name</th>
+                    <th style="width: 120px;">Code</th>
+                    <th>Subject Name</th>
                     <th>Description</th>
-                    <th>Teachers</th>
-                    <th>Actions</th>
+                    <th>Faculty Assigned</th>
+                    <th style="width: 120px;" class="text-center">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="subjectTableBody">
                 {% for subject in subjects %}
-                <tr>
-                    <td><span class="badge badge-indigo">{{ subject.code }}</span></td>
-                    <td><strong>{{ subject.name }}</strong></td>
-                    <td class="text-truncate" style="max-width: 300px;">{{ subject.description }}</td>
+                <tr class="subject-row">
+                    <td><span class="badge badge-premium">{{ subject.code }}</span></td>
                     <td>
-                        <div class="avatar-group">
-                            {% for teacher in subject.teachers.all %}
-                            <div class="avatar-small" title="{{ teacher.user.username }}">
-                                {{ teacher.user.username|first|upper }}
-                            </div>
-                            {% empty %}
-                            <span class="text-muted">None</span>
-                            {% endfor %}
+                        <div class="subject-name-cell">
+                            <strong>{{ subject.name }}</strong>
                         </div>
                     </td>
                     <td>
-                        <div class="table-actions">
-                            <a href="{% url 'edit_subject' subject.pk %}" class="action-btn" title="Edit"><i class="fas fa-edit"></i></a>
-                            <form action="{% url 'delete_subject' subject.pk %}" method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="action-btn text-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this subject?')"><i class="fas fa-trash"></i></button>
-                            </form>
+                        <div class="text-truncate-2" title="{{ subject.description }}">
+                            {{ subject.description|default:"No description provided." }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="avatar-stack">
+                            {% for teacher in subject.teachers.all %}
+                            <div class="avatar-mini" title="Prof. {{ teacher.user.username }}">
+                                {{ teacher.user.username|first|upper }}
+                            </div>
+                            {% empty %}
+                            <span class="text-muted small">No faculty</span>
+                            {% endfor %}
+                            {% if subject.teachers.count > 3 %}
+                            <div class="avatar-mini count">+{{ subject.teachers.count|add:"-3" }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="table-actions justify-center">
+                            <a href="{% url 'edit_subject' subject.pk %}" class="action-btn-styled edit" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'delete_subject' subject.pk %}" class="action-btn-styled delete" title="Delete"><i class="fas fa-trash-alt"></i></a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">No subjects found.</td>
+                    <td colspan="5" class="text-center py-5">
+                        <div class="empty-state-small">
+                            <i class="fas fa-folder-open mb-3"></i>
+                            <p>No subjects have been added yet.</p>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -73,35 +111,97 @@
 
 <!-- Modal -->
 <div class="modal-overlay" id="addSubjectModal">
-    <div class="modal glass-effect">
+    <div class="modal glass-effect premium-modal">
         <div class="modal-header">
-            <h3>Add New Subject</h3>
+            <h3><i class="fas fa-plus-circle"></i> Add New Subject</h3>
             <button class="close-btn" onclick="document.getElementById('addSubjectModal').classList.remove('active')">&times;</button>
         </div>
         <form method="post">
             {% csrf_token %}
             <div class="modal-body">
-                {{ form.as_p }}
+                <div class="form-grid-2">
+                    <div class="form-group-custom">
+                        <label>Subject Code</label>
+                        {{ form.code }}
+                    </div>
+                    <div class="form-group-custom">
+                        <label>Subject Name</label>
+                        {{ form.name }}
+                    </div>
+                </div>
+                <div class="form-group-custom full-width">
+                    <label>Description</label>
+                    {{ form.description }}
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="document.getElementById('addSubjectModal').classList.remove('active')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Subject</button>
+                <button type="button" class="btn btn-secondary-glass" onclick="document.getElementById('addSubjectModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn btn-primary ripple-glow">Save Subject</button>
             </div>
         </form>
     </div>
 </div>
 
 <style>
-.subjects-container { margin-top: 2rem; }
-.badge-indigo { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
-.avatar-group { display: flex; }
-.avatar-small { 
-    width: 25px; height: 25px; border-radius: 50%; 
-    background: var(--accent); color: white; 
-    font-size: 0.7rem; display: flex; 
-    align-items: center; justify-content: center;
-    margin-right: -8px; border: 2px solid var(--glass-bg);
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+.stat-card { padding: 1.25rem; display: flex; align-items: center; gap: 1rem; border-radius: 16px; }
+.stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.icon-indigo { background: rgba(99, 102, 241, 0.1); color: #818cf8; }
+.icon-cyan { background: rgba(34, 211, 238, 0.1); color: #22d3ee; }
+.icon-amber { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+
+.badge-premium {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    padding: 4px 10px;
 }
+
+.avatar-stack { display: flex; align-items: center; }
+.avatar-mini {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: white;
+    font-size: 0.7rem; display: flex;
+    align-items: center; justify-content: center;
+    margin-right: -10px; border: 2px solid #1a1b26;
+    transition: 0.3s;
+}
+.avatar-mini.count { background: #3b4261; z-index: 1; }
+.avatar-mini:hover { transform: translateY(-5px); z-index: 10; cursor: default; }
+
+.action-btn-styled {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.3s; color: var(--text-muted);
+    background: rgba(255,255,255,0.03);
+}
+.action-btn-styled:hover { transform: scale(1.1); }
+.action-btn-styled.edit:hover { background: var(--accent); color: white; }
+.action-btn-styled.delete:hover { background: #ef4444; color: white; }
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.premium-modal { max-width: 600px; padding: 0; }
+.modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.modal-body { padding: 2rem; }
+.modal-footer { padding: 1.5rem 2rem; background: rgba(0,0,0,0.1); }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; }
+.form-group-custom { margin-bottom: 1.5rem; }
+.form-group-custom label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+.form-group-custom input, .form-group-custom textarea {
+    width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white;
+}
+.form-group-custom input:focus { border-color: var(--accent); outline: none; }
 </style>
 
 {% block extra_js %}
@@ -109,24 +209,27 @@
 function filterSubjects() {
     const input = document.getElementById('subjectSearch');
     const filter = input.value.toLowerCase();
-    const tbody = document.querySelector('.modern-table tbody');
-    const rows = tbody.getElementsByTagName('tr');
+    const rows = document.querySelectorAll('.subject-row');
 
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (row.cells.length < 2) continue;
-        
-        const code = row.cells[0].textContent.toLowerCase();
-        const name = row.cells[1].textContent.toLowerCase();
-        const desc = row.cells[2].textContent.toLowerCase();
-        
-        if (code.includes(filter) || name.includes(filter) || desc.includes(filter)) {
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (text.includes(filter)) {
             row.style.display = "";
+            row.style.animation = "fadeIn 0.3s ease forwards";
         } else {
             row.style.display = "none";
         }
-    }
+    });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Calculate Faculty Count
+    const facultySet = new Set();
+    document.querySelectorAll('.avatar-mini:not(.count)').forEach(el => {
+        facultySet.add(el.getAttribute('title'));
+    });
+    document.getElementById('assignedFacultyCount').textContent = facultySet.size;
+});
 </script>
 {% endblock %}
 

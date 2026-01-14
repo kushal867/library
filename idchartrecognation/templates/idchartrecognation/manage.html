@@ -1,71 +1,136 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Manage Enrollments - Library MS{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="fas fa-cog"></i> Manage Face Enrollments</h1>
-    <p>View, activate, and deactivate student face encodings</p>
+    <div class="header-info">
+        <h1><i class="fas fa-id-card-alt"></i> Biometric Management</h1>
+        <p>Control student face encodings and enrollment status</p>
+    </div>
+    <div class="header-search">
+        <div class="search-box glass-effect">
+            <i class="fas fa-search"></i>
+            <input type="text" id="enrollmentSearch" placeholder="Search by student name or roll no..." onkeyup="filterEnrollments()">
+        </div>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'idchartrecognation:enroll_face' %}" class="btn btn-primary ripple-glow">
+            <i class="fas fa-user-plus"></i> New Enrollment
+        </a>
+    </div>
 </div>
 
-<div class="section-card">
+<div class="stats-grid mb-4">
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-blue"><i class="fas fa-fingerprint"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Total Enrolled</span>
+            <span class="stat-value">{{ enrolled_students.count }}</span>
+        </div>
+    </div>
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-green"><i class="fas fa-shield-alt"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Active IDs</span>
+            <span class="stat-value" id="activeEnrollments">0</span>
+        </div>
+    </div>
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-purple"><i class="fas fa-vial"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Avg Quality</span>
+            <span class="stat-value" id="avgQuality">0%</span>
+        </div>
+    </div>
+</div>
+
+<div class="section-card glass-panel overflow-hidden">
     <div class="table-responsive">
-        <table class="data-table">
+        <table class="modern-table">
             <thead>
                 <tr>
-                    <th>Student</th>
-                    <th>Roll No</th>
-                    <th>Branch</th>
-                    <th>Enrolled Date</th>
-                    <th>Last Updated</th>
-                    <th>Quality Score</th>
+                    <th>Student Profile</th>
+                    <th>Branch / Roll</th>
+                    <th>Enrolled On</th>
+                    <th>Quality</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th class="text-center">Operations</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="enrollmentTableBody">
                 {% for enrollment in enrolled_students %}
-                <tr>
-                    <td>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</td>
-                    <td>{{ enrollment.student.roll_no }}</td>
-                    <td>{{ enrollment.student.branch }}</td>
-                    <td>{{ enrollment.enrolled_at|date:"M d, Y H:i" }}</td>
-                    <td>{{ enrollment.updated_at|date:"M d, Y H:i" }}</td>
+                <tr class="enrollment-row" data-active="{{ enrollment.is_active|lower }}">
                     <td>
-                        <div class="quality-badge">{{ enrollment.confidence_score|floatformat:2 }}</div>
+                        <div class="student-info-cell">
+                            <div class="mini-avatar">
+                                {{ enrollment.student.user.username|first|upper }}
+                            </div>
+                            <div class="info-text">
+                                <strong>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</strong>
+                                <span>@{{ enrollment.student.user.username }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="branch-roll">
+                            <span class="badge badge-outline-indigo">{{ enrollment.student.branch }}</span>
+                            <span class="roll-no">#{{ enrollment.student.roll_no }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="date-cell">
+                            <span class="main-date">{{ enrollment.enrolled_at|date:"M d, Y" }}</span>
+                            <span class="sub-date">{{ enrollment.enrolled_at|date:"H:i" }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="quality-score-wrapper">
+                            <div class="quality-bar">
+                                <div class="quality-fill" style="width: {% widthratio enrollment.confidence_score 1 100 %}%"></div>
+                            </div>
+                            <span class="quality-text">{{ enrollment.confidence_score|floatformat:2 }}</span>
+                        </div>
                     </td>
                     <td>
                         {% if enrollment.is_active %}
-                            <span class="badge badge-success"><i class="fas fa-check"></i> Active</span>
+                            <span class="status-pill active"><i class="fas fa-circle"></i> Active</span>
                         {% else %}
-                            <span class="badge badge-secondary"><i class="fas fa-times"></i> Inactive</span>
+                            <span class="status-pill inactive"><i class="fas fa-circle"></i> Paused</span>
                         {% endif %}
                     </td>
                     <td>
-                        <div class="action-buttons">
+                        <div class="table-actions justify-center">
                             {% if enrollment.is_active %}
                                 <form method="post" action="{% url 'idchartrecognation:deactivate_encoding' enrollment.id %}" style="display: inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn-icon btn-danger" title="Deactivate" 
-                                            onclick="return confirm('Deactivate this face encoding?')">
-                                        <i class="fas fa-ban"></i>
+                                    <button type="submit" class="action-btn-styled delete" title="Deactivate" 
+                                            onclick="return confirm('Suspend this biometric ID?')">
+                                        <i class="fas fa-pause"></i>
                                     </button>
                                 </form>
                             {% else %}
                                 <form method="post" action="{% url 'idchartrecognation:activate_encoding' enrollment.id %}" style="display: inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn-icon btn-success" title="Activate"
-                                            onclick="return confirm('Activate this face encoding?')">
-                                        <i class="fas fa-check"></i>
+                                    <button type="submit" class="action-btn-styled edit" title="Activate"
+                                            onclick="return confirm('Re-activate this biometric ID?')">
+                                        <i class="fas fa-play"></i>
                                     </button>
                                 </form>
                             {% endif %}
+                            <a href="#" class="action-btn-styled" title="View Logs"><i class="fas fa-history"></i></a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center">No enrolled students found.</td>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="empty-state-small">
+                            <i class="fas fa-user-slash mb-3"></i>
+                            <p>No biometric enrollments found.</p>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -73,67 +138,99 @@
     </div>
 </div>
 
-<div class="form-actions">
-    <a href="{% url 'idchartrecognation:enroll_face' %}" class="btn btn-primary">
-        <i class="fas fa-user-plus"></i> Enroll New Student
-    </a>
-    <a href="{% url 'idchartrecognation:dashboard' %}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Dashboard
+<div class="footer-actions mt-4">
+    <a href="{% url 'idchartrecognation:dashboard' %}" class="btn btn-secondary-glass">
+        <i class="fas fa-arrow-left"></i> Recognition Dashboard
     </a>
 </div>
 
 <style>
-.action-buttons {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
+.student-info-cell { display: flex; align-items: center; gap: 1rem; }
+.mini-avatar { 
+    width: 36px; height: 36px; background: var(--accent); 
+    border-radius: 10px; display: flex; align-items: center; 
+    justify-content: center; font-weight: bold; color: white;
 }
+.info-text { display: flex; flex-direction: column; }
+.info-text span { font-size: 0.75rem; color: var(--text-muted); }
 
-.btn-icon {
-    padding: 0.5rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-size: 0.9rem;
+.branch-roll { display: flex; align-items: center; gap: 0.5rem; }
+.badge-outline-indigo { 
+    background: transparent; border: 1px solid #6366f1; 
+    color: #818cf8; font-size: 0.7rem; padding: 2px 8px;
 }
+.roll-no { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted); }
 
-.btn-icon:hover {
-    transform: scale(1.1);
-}
+.date-cell { display: flex; flex-direction: column; }
+.sub-date { font-size: 0.75rem; color: var(--text-muted); }
 
-.btn-icon.btn-danger {
-    background: #ef4444;
-    color: white;
-}
+.quality-score-wrapper { width: 100px; }
+.quality-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+.quality-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #10b981); border-radius: 3px; }
+.quality-text { font-size: 0.75rem; font-weight: 600; }
 
-.btn-icon.btn-danger:hover {
-    background: #dc2626;
+.status-pill { 
+    display: inline-flex; align-items: center; gap: 6px; 
+    padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
 }
+.status-pill.active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.status-pill.inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.status-pill i { font-size: 0.5rem; }
 
-.btn-icon.btn-success {
-    background: #10b981;
-    color: white;
+.action-btn-styled {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.3s; color: var(--text-muted);
+    background: rgba(255,255,255,0.03);
+    border: none; cursor: pointer;
 }
+.action-btn-styled:hover { transform: scale(1.1); color: white; }
+.action-btn-styled.edit:hover { background: var(--accent); }
+.action-btn-styled.delete:hover { background: #f59e0b; }
 
-.btn-icon.btn-success:hover {
-    background: #059669;
-}
-
-.quality-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.text-center {
-    text-align: center;
-    color: #9ca3af;
-    padding: 2rem;
-}
+.justify-center { justify-content: center; gap: 0.5rem; }
+.footer-actions { display: flex; justify-content: space-between; }
 </style>
+
+{% block extra_js %}
+<script>
+function filterEnrollments() {
+    const input = document.getElementById('enrollmentSearch');
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll('.enrollment-row');
+
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (text.includes(filter)) {
+            row.style.display = "";
+            row.style.animation = "fadeIn 0.3s ease forwards";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Stats calculation
+    const rows = document.querySelectorAll('.enrollment-row');
+    let active = 0;
+    let totalScore = 0;
+    
+    rows.forEach(row => {
+        if (row.getAttribute('data-active') === 'true') active++;
+        const score = parseFloat(row.querySelector('.quality-text').textContent);
+        totalScore += score;
+    });
+    
+    document.getElementById('activeEnrollments').textContent = active;
+    if (rows.length > 0) {
+        const avg = (totalScore / rows.length) * 100;
+        document.getElementById('avgQuality').textContent = avg.toFixed(1) + '%';
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %}
 
 {% endblock %}

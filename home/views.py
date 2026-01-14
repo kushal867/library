@@ -297,30 +297,32 @@ def view_issued_books(request):
 @staff_member_required(login_url='/login/')
 def delete_book(request, myid):
     """Delete a book from the library with safety checks (staff only)"""
-    try:
-        book = get_object_or_404(Book, id=myid)
-        
-        # Check if book is currently issued
-        issued_count = IssuedBook.objects.filter(
-            book=book,
-            returned_date__isnull=True
-        ).count()
-        
-        if issued_count > 0:
-            messages.error(
-                request,
-                f"Cannot delete '{book.name}'. {issued_count} copy(ies) currently issued. "
-                "Please wait for all copies to be returned."
-            )
-            return redirect('index')
-        
-        book_name = book.name
-        book.delete()
-        messages.success(request, f"Book '{book_name}' deleted successfully!")
-    except Exception as e:
-        messages.error(request, f"Error deleting book: {str(e)}")
+    book = get_object_or_404(Book, id=myid)
     
-    return redirect('index')
+    if request.method == "POST":
+        try:
+            # Check if book is currently issued
+            issued_count = IssuedBook.objects.filter(
+                book=book,
+                returned_date__isnull=True
+            ).count()
+            
+            if issued_count > 0:
+                messages.error(
+                    request,
+                    f"Cannot delete '{book.name}'. {issued_count} copy(ies) currently issued. "
+                    "Please wait for all copies to be returned."
+                )
+                return redirect('index')
+            
+            book_name = book.name
+            book.delete()
+            messages.success(request, f"Book '{book_name}' deleted successfully!")
+        except Exception as e:
+            messages.error(request, f"Error deleting book: {str(e)}")
+        return redirect('index')
+        
+    return render(request, 'home/confirm_delete.html', {'object': book, 'type': 'Book'})
 
 @login_required(login_url='/login/')
 def view_overdue_books(request):

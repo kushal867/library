@@ -190,13 +190,9 @@
                 <a href="{% url 'edit_book' book.id %}" class="btn-icon ripple" title="Edit Book">
                     <i class="fas fa-edit"></i>
                 </a>
-                <button class="btn-icon ripple delete-trigger" 
-                        data-delete-url="{% url 'delete_book' book.id %}"
-                        data-book-name="{{ book.name|escapejs }}"
-                        onclick="openDeleteModal(this)"
-                        title="Delete Book">
+                <a href="{% url 'delete_book' book.id %}" class="btn-icon ripple" title="Delete Book">
                     <i class="fas fa-trash"></i>
-                </button>
+                </a>
             </div>
         </div>
         <div class="card-body">
@@ -254,12 +250,9 @@
                     <div class="table-actions">
                         <a href="{% url 'book_detail' book.id %}" class="action-btn" title="View"><i class="fas fa-eye"></i></a>
                         <a href="{% url 'edit_book' book.id %}" class="action-btn" title="Edit"><i class="fas fa-edit"></i></a>
-                        <button class="action-btn delete-trigger" 
-                                data-delete-url="{% url 'delete_book' book.id %}"
-                                data-book-name="{{ book.name|escapejs }}"
-                                onclick="openDeleteModal(this)" title="Delete">
+                        <a href="{% url 'delete_book' book.id %}" class="action-btn" title="Delete">
                             <i class="fas fa-trash"></i>
-                        </button>
+                        </a>
                     </div>
                 </td>
             </tr>
@@ -292,27 +285,6 @@
     <a href="{% url 'index' %}" class="btn btn-secondary">Clear All Filters</a>
 </div>
 {% endif %}
-
-<!-- DELETE MODAL -->
-<div class="modal-overlay" id="deleteModal">
-    <div class="modal delete-modal">
-        <div class="modal-header">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Confirm Deletion</h3>
-        </div>
-        <div class="modal-body">
-            <p id="deleteMessage"></p>
-            <p class="warning-text">This action cannot be undone. All issue history for this book will be preserved, but no new copies can be issued.</p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-            <form method="post" id="deleteForm" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger ripple">Confirm Delete</button>
-            </form>
-        </div>
-    </div>
-</div>
 
 {% endblock %}
 
@@ -383,28 +355,6 @@
             }, stepTime);
         });
     }
-
-    /* ---------- DELETE MODAL ---------- */
-    const modal = document.getElementById('deleteModal');
-    const msg = document.getElementById('deleteMessage');
-    const form = document.getElementById('deleteForm');
-
-    window.openDeleteModal = (btn) => {
-        msg.textContent = `Are you sure you want to delete "${btn.dataset.bookName}"?`;
-        form.action = btn.dataset.deleteUrl;
-        modal.classList.add('active');
-    };
-
-    window.closeDeleteModal = () => {
-        modal.classList.remove('active');
-    };
-
-    // Close modal on escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeDeleteModal();
-        }
-    });
 
     /* ---------- INITIALIZATION ---------- */
     document.addEventListener('DOMContentLoaded', () => {

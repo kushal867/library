@@ -6,132 +6,264 @@
 {% block content %}
 <div class="page-header">
     <div class="header-info">
-        <h1><i class="fas fa-chalkboard-teacher"></i> Teachers</h1>
-        <p>Manage faculty members and their assignments</p>
+        <h1><i class="fas fa-chalkboard-teacher"></i> Faculty Management</h1>
+        <p>Overview and management of teaching staff members</p>
     </div>
     <div class="header-search">
-        <div class="search-box">
+        <div class="search-box glass-effect">
             <i class="fas fa-search"></i>
-            <input type="text" id="teacherSearch" placeholder="Search teachers..." onkeyup="filterTeachers()">
+            <input type="text" id="teacherSearch" placeholder="Find teacher by name, dept or subject..." onkeyup="filterTeachers()">
         </div>
     </div>
     <div class="header-actions">
-        <a href="{% url 'add_teacher' %}" class="btn btn-primary ripple">
-            <i class="fas fa-user-plus"></i> Add Teacher
+        <a href="{% url 'add_teacher' %}" class="btn btn-primary ripple-glow">
+            <i class="fas fa-user-plus"></i> Add New Teacher
         </a>
     </div>
 </div>
 
-<div class="teachers-grid">
+<!-- Teacher Stats Overview -->
+<div class="stats-grid mb-4">
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-blue"><i class="fas fa-users"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Total Faculty</span>
+            <span class="stat-value">{{ teachers.count }}</span>
+        </div>
+    </div>
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-green"><i class="fas fa-user-check"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Active</span>
+            <span class="stat-value" id="activeCount">{{ teachers.count }}</span>
+        </div>
+    </div>
+    <div class="stat-card glass-effect">
+        <div class="stat-icon icon-purple"><i class="fas fa-book"></i></div>
+        <div class="stat-content">
+            <span class="stat-label">Dept. Count</span>
+            <span class="stat-value" id="deptCount">0</span>
+        </div>
+    </div>
+</div>
+
+<div class="teachers-grid" id="teacherGrid">
     {% for teacher in teachers %}
-    <div class="modern-card teacher-card glass-effect">
-        <div class="card-status {% if teacher.is_active %}status-online{% else %}status-offline{% endif %}"></div>
-        <div class="teacher-avatar-large">
-            {{ teacher.user.username|first|upper }}
-        </div>
-        <h3>{{ teacher.user.get_full_name|default:teacher.user.username }}</h3>
-        <p class="department"><i class="fas fa-building"></i> {{ teacher.department }}</p>
+    <div class="teacher-card premium-card glass-effect" data-dept="{{ teacher.department }}">
+        <div class="card-status-dot {% if teacher.is_active %}online{% else %}offline{% endif %}" title="{% if teacher.is_active %}Active{% else %}Inactive{% endif %}"></div>
         
-        <div class="teacher-meta">
-            <span><i class="fas fa-phone"></i> {{ teacher.phone }}</span>
-            <span><i class="fas fa-envelope"></i> {{ teacher.user.email }}</span>
+        <div class="teacher-avatar-wrapper">
+            <div class="teacher-avatar-main">
+                {{ teacher.user.username|first|upper }}
+            </div>
+            <div class="avatar-ring"></div>
         </div>
 
-        <div class="teacher-subjects">
-            {% for subject in teacher.subjects.all %}
-            <span class="subject-tag">{{ subject.code }}</span>
-            {% empty %}
-            <span class="text-muted">No subjects assigned</span>
-            {% endfor %}
+        <div class="teacher-info">
+            <h3>{{ teacher.user.get_full_name|default:teacher.user.username }}</h3>
+            <span class="dept-badge"><i class="fas fa-id-badge"></i> {{ teacher.department }}</span>
+            
+            <div class="contact-strip">
+                <a href="mailto:{{ teacher.user.email }}" title="{{ teacher.user.email }}"><i class="fas fa-envelope"></i></a>
+                <a href="tel:{{ teacher.phone }}" title="{{ teacher.phone }}"><i class="fas fa-phone"></i></a>
+            </div>
+
+            <div class="teacher-subjects-list">
+                <label>Assigned Subjects</label>
+                <div class="subject-tags">
+                    {% for subject in teacher.subjects.all %}
+                    <span class="tag-compact" title="{{ subject.name }}">{{ subject.code }}</span>
+                    {% empty %}
+                    <span class="text-placeholder">No subjects</span>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
-        <div class="teacher-actions">
-            <a href="{% url 'edit_teacher' teacher.pk %}" class="btn btn-glass-sm"><i class="fas fa-edit"></i> Edit</a>
-            <form action="{% url 'delete_teacher' teacher.pk %}" method="POST" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-glass-sm text-danger" onclick="return confirm('Are you sure you want to delete this teacher?')"><i class="fas fa-trash"></i></button>
-            </form>
+        <div class="card-actions-fixed">
+            <a href="{% url 'edit_teacher' teacher.pk %}" class="btn-action-icon edit" title="Edit Profile"><i class="fas fa-user-edit"></i></a>
+            <a href="{% url 'delete_teacher' teacher.pk %}" class="btn-action-icon delete" title="Remove Faculty"><i class="fas fa-trash-alt"></i></a>
         </div>
     </div>
     {% empty %}
-    <div class="empty-state">
-        <i class="fas fa-users-slash"></i>
-        <h3>No teachers registered</h3>
-        <p>Start by adding faculty members to the system.</p>
+    <div class="empty-placeholder glass-effect">
+        <div class="empty-icon"><i class="fas fa-users-slash"></i></div>
+        <h3>No teachers found</h3>
+        <p>Get started by adding faculty members to the system.</p>
+        <a href="{% url 'add_teacher' %}" class="btn btn-primary mt-3">Add Teacher</a>
     </div>
     {% endfor %}
 </div>
 
 <style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.stat-card {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+.icon-blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.icon-green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.icon-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+.stat-label { display: block; font-size: 0.85rem; color: var(--text-muted); }
+.stat-value { font-size: 1.5rem; font-weight: 700; color: #fff; }
+
 .teachers-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 2rem;
-    margin-top: 2rem;
 }
-.teacher-card {
-    padding: 2rem;
-    text-align: center;
+.premium-card {
     position: relative;
-    transition: transform 0.3s ease;
+    padding: 2rem 1.5rem;
+    border-radius: 24px;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden;
 }
-.teacher-card:hover { transform: translateY(-10px); }
-.card-status {
+.premium-card:hover {
+    transform: translateY(-12px);
+    border-color: var(--accent);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+.card-status-dot {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 12px;
-    height: 12px;
+    top: 20px;
+    right: 20px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
 }
-.status-online { background: #10b981; box-shadow: 0 0 10px #10b981; }
-.status-offline { background: #ef4444; }
-.teacher-avatar-large {
-    width: 80px;
-    height: 80px;
-    background: var(--accent);
-    color: white;
-    font-size: 2rem;
+.card-status-dot.online { background: #10b981; box-shadow: 0 0 10px #10b981; }
+.card-status-dot.offline { background: #6b7280; }
+
+.teacher-avatar-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem;
+}
+.teacher-avatar-main {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 1.5rem;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    position: relative;
+    z-index: 2;
 }
-.department { color: #6366f1; font-weight: 500; margin-bottom: 1rem; }
-.teacher-meta {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+.avatar-ring {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transition: 0.4s;
 }
-.teacher-subjects {
+.premium-card:hover .avatar-ring { border-color: var(--accent); transform: scale(1.1); }
+
+.teacher-info h3 { margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; }
+.dept-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+}
+.contact-strip {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
     justify-content: center;
+    gap: 1rem;
     margin-bottom: 1.5rem;
 }
-.subject-tag {
-    background: rgba(255,255,255,0.05);
-    padding: 2px 10px;
-    border-radius: 15px;
-    font-size: 0.8rem;
-    border: 1px solid rgba(255,255,255,0.1);
+.contact-strip a {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    transition: 0.3s;
 }
-.teacher-actions { display: flex; gap: 1rem; justify-content: center; }
-.btn-glass-sm {
+.contact-strip a:hover { color: var(--accent); }
+
+.teacher-subjects-list {
+    text-align: left;
+    background: rgba(0,0,0,0.15);
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+.teacher-subjects-list label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+.subject-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.tag-compact {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.card-actions-fixed {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.btn-action-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
     background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
     color: var(--text-main);
-    padding: 5px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
+    transition: 0.3s;
 }
+.btn-action-icon:hover { transform: scale(1.1); }
+.btn-action-icon.edit:hover { background: var(--accent); color: white; }
+.btn-action-icon.delete:hover { background: #ef4444; color: white; }
+
+.empty-placeholder {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem;
+    border-radius: 24px;
+}
+.empty-icon { font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem; opacity: 0.3; }
 </style>
 
 {% block extra_js %}
@@ -140,19 +272,33 @@ function filterTeachers() {
     const input = document.getElementById('teacherSearch');
     const filter = input.value.toLowerCase();
     const cards = document.querySelectorAll('.teacher-card');
+    let visibleCount = 0;
 
     cards.forEach(card => {
         const name = card.querySelector('h3').textContent.toLowerCase();
-        const dept = card.querySelector('.department').textContent.toLowerCase();
-        const subjects = card.querySelector('.teacher-subjects').textContent.toLowerCase();
+        const dept = card.getAttribute('data-dept').toLowerCase();
+        const subjects = card.querySelector('.subject-tags').textContent.toLowerCase();
         
         if (name.includes(filter) || dept.includes(filter) || subjects.includes(filter)) {
-            card.style.display = "";
+            card.style.display = "block";
+            card.style.animation = "fadeIn 0.4s ease forwards";
+            visibleCount++;
         } else {
             card.style.display = "none";
         }
     });
+
+    // Update stats if needed, or handle empty state visually
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Calculate Dept Count
+    const depts = new Set();
+    document.querySelectorAll('.teacher-card').forEach(card => {
+        depts.add(card.getAttribute('data-dept'));
+    });
+    document.getElementById('deptCount').textContent = depts.size;
+});
 </script>
 {% endblock %}
 
