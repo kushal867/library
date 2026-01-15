@@ -10,6 +10,8 @@ urlpatterns = [
     path('issued_books/', views.view_issued_books, name='view_issued_books'),
     path('overdue_books/', views.view_overdue_books, name='overdue_books'),
     path('delete_book/<int:myid>/', views.delete_book, name='delete_book'),
+    path('book/<int:book_id>/', views.book_detail, name='book_detail'),
+    path('statistics/', views.library_statistics, name='library_statistics'),
     
     # Teacher & Subject Management
     path('subjects/', views.subject_list, name='subject_list'),
@@ -20,6 +22,7 @@ urlpatterns = [
     path('teachers/edit/<int:pk>/', views.edit_teacher, name='edit_teacher'),
     path('teachers/delete/<int:pk>/', views.delete_teacher, name='delete_teacher'),
     path('student/qr/<int:student_id>/', views.student_qr_code, name='student_qr_code'),
+    path('dashboard/student/', views.student_dashboard, name='student_dashboard'),
     path('search_books_api/', views.search_books_api, name='search_books_api'),
 ]
 

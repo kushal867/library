@@ -90,7 +90,7 @@
         }
 
         // Fetch book details via search API (filtering by ISBN)
-        fetch(`/search_books_api/?q=${isbn}`)
+        fetch(`/home/search_books_api/?q=${isbn}`)
             .then(response => response.json())
             .then(data => {
                 const book = data.results.find(b => b.isbn === isbn);

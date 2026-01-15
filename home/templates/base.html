@@ -483,7 +483,7 @@
             }
 
             searchTimeout = setTimeout(() => {
-                fetch(`/search_books_api/?q=${encodeURIComponent(query)}`)
+                fetch(`/home/search_books_api/?q=${encodeURIComponent(query)}`)
                     .then(response => response.json())
                     .then(data => {
                         searchResults.innerHTML = '';

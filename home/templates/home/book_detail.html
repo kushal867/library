@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ book.name }} - Library MS{% endblock %}
+
+{% block content %}
+<div class="book-detail-container">
+    <div class="back-navigation">
+        <a href="{% url 'index' %}" class="btn-back ripple">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="book-detail-layout glass-effect">
+        <div class="book-visual">
+            <div class="main-cover">
+                {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" alt="{{ book.name }}">
+                {% else %}
+                    <div class="placeholder-cover-large"><i class="fas fa-book"></i></div>
+                {% endif %}
+                <div class="availability-status {% if available_copies > 0 %}status-available{% else %}status-unavailable{% endif %}">
+                    {% if available_copies > 0 %}
+                        <i class="fas fa-check-circle"></i> {{ available_copies }} Copies Available
+                    {% else %}
+                        <i class="fas fa-times-circle"></i> Out of Stock
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                {% if available_copies > 0 %}
+                <a href="{% url 'issue_book' %}?book={{ book.isbn }}" class="btn btn-primary ripple-glow full-width">
+                    <i class="fas fa-hand-holding"></i> Issue This Book
+                </a>
+                {% endif %}
+                {% if user.is_staff %}
+                <div class="staff-actions">
+                    <a href="{% url 'edit_book' book.id %}" class="btn btn-glass ripple">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{% url 'delete_book' book.id %}" class="btn btn-danger-glass ripple">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="book-info-section">
+            <div class="book-header">
+                <span class="category-tag">{{ book.category.name }}</span>
+                <h1>{{ book.name }}</h1>
+                <p class="author-name">by <span>{{ book.author }}</span></p>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">ISBN-13</span>
+                    <span class="value">{{ book.isbn }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Publisher</span>
+                    <span class="value">{{ book.publisher|default:"N/A" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Year</span>
+                    <span class="value">{{ book.publication_year|default:"N/A" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Total Copies</span>
+                    <span class="value">{{ book.quantity }}</span>
+                </div>
+            </div>
+
+            <div class="description-box">
+                <h3>Description</h3>
+                <p>{{ book.description|default:"No description available for this resource." }}</p>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="current">Current Issues</button>
+                    <button class="tab-btn" data-tab="history">Recent History</button>
+                </div>
+                
+                <div class="tab-content active" id="current">
+                    {% if current_issues %}
+                        <div class="mini-table-wrapper">
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Issued Date</th>
+                                        <th>Due Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for issue in current_issues %}
+                                    <tr>
+                                        <td>{{ issue.student.user.username }}</td>
+                                        <td>{{ issue.issued_date }}</td>
+                                        <td class="{% if issue.is_overdue %}text-danger{% endif %}">{{ issue.expiry_date }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-tab">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No copies are currently issued.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="tab-content" id="history">
+                    {% if issue_history %}
+                        <div class="mini-table-wrapper">
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Issued</th>
+                                        <th>Returned</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for issue in issue_history %}
+                                    <tr>
+                                        <td>{{ issue.student.user.username }}</td>
+                                        <td>{{ issue.issued_date }}</td>
+                                        <td>{{ issue.returned_date|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-tab">
+                            <i class="fas fa-history"></i>
+                            <p>No circulation history available.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.book-detail-container {
+    animation: fadeIn 0.8s ease;
+    padding-bottom: 4rem;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    margin-bottom: 2rem;
+}
+
+.btn-back:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--primary);
+    transform: translateX(-5px);
+}
+
+.book-detail-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 3rem;
+    padding: 3rem;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.book-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.main-cover {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    aspect-ratio: 2/3;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.main-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.main-cover:hover img {
+    transform: scale(1.05);
+}
+
+.placeholder-cover-large {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    color: rgba(255, 255, 255, 0.1);
+}
+
+.availability-status {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-available {
+    background: rgba(16, 185, 129, 0.8);
+    color: white;
+}
+
+.status-unavailable {
+    background: rgba(239, 68, 68, 0.8);
+    color: white;
+}
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.staff-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.btn-danger-glass {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger-glass:hover {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+}
+
+.book-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.book-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0.5rem 0;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.category-tag {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--primary);
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.author-name {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+}
+
+.author-name span {
+    color: white;
+    font-weight: 600;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-item .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.info-item .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.description-box h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.description-box p {
+    color: var(--text-muted);
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+
+.tabs-container {
+    margin-top: 1rem;
+}
+
+.tabs-header {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 1rem 0;
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+.mini-table-wrapper {
+    overflow-x: auto;
+}
+
+.mini-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mini-table th {
+    text-align: left;
+    padding: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.mini-table td {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.empty-tab {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+}
+
+@media (max-width: 968px) {
+    .book-detail-layout {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+    
+    .book-visual {
+        max-width: 400px;
+        margin: 0 auto;
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            tab.classList.add('active');
+            document.getElementById(target).classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}
