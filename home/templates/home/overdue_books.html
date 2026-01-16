@@ -1,64 +1,96 @@
-{% extends 'home/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Overdue Books - Library Management{% endblock %}
+{% block title %}Overdue Books - Library MS{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="card shadow">
-        <div class="card-header bg-danger text-white">
-            <h3 class="mb-0">
-                <i class="fas fa-exclamation-triangle"></i> Overdue Books
-                <span class="badge bg-white text-danger float-end">{{ total_overdue }} Total</span>
-            </h3>
-        </div>
-        <div class="card-body">
-            {% if overdue_books %}
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-danger">
-                            <tr>
-                                <th>Book</th>
-                                <th>Student</th>
-                                <th>Issued Date</th>
-                                <th>Due Date</th>
-                                <th>Days Overdue</th>
-                                <th>Fine Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for issue in overdue_books %}
-                            <tr>
-                                <td>
-                                    <strong>{{ issue.book.name }}</strong><br>
-                                    <small class="text-muted">by {{ issue.book.author }}</small><br>
-                                    <small class="text-muted">ISBN: {{ issue.book.isbn }}</small>
-                                </td>
-                                <td>
-                                    <strong>{{ issue.student.user.username }}</strong><br>
-                                    <small class="text-muted">{{ issue.student.branch }} - {{ issue.student.classroom }}</small>
-                                </td>
-                                <td>{{ issue.issued_date|date:"M d, Y" }}</td>
-                                <td class="text-danger">
-                                    <strong>{{ issue.expiry_date|date:"M d, Y" }}</strong>
-                                </td>
-                                <td>
-                                    <span class="badge bg-danger">{{ issue.days_until_due|add:"-1"|add:"-" }} days</span>
-                                </td>
-                                <td>
-                                    <strong class="text-danger">${{ issue.calculate_fine }}</strong>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> No overdue books! All books are returned on time or within due date.
-                </div>
-            {% endif %}
-        </div>
+<div class="page-header">
+    <h1><i class="fas fa-exclamation-circle text-danger"></i> Overdue Collections</h1>
+    <p>Monitor and manage resources past their scheduled return date</p>
+</div>
+
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="card-stat" style="border-left: 5px solid var(--danger);">
+        <h3>Total Overdue</h3>
+        <p>{{ overdue_books|length }}</p>
     </div>
 </div>
+
+{% if overdue_books %}
+<div class="table-container glass-effect">
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th style="color: var(--danger);"><i class="fas fa-book"></i> Resource</th>
+                <th><i class="fas fa-user-graduate"></i> Student</th>
+                <th><i class="fas fa-calendar-plus"></i> Issued</th>
+                <th style="color: var(--danger);"><i class="fas fa-calendar-times"></i> Due Date</th>
+                <th><i class="fas fa-clock"></i> Overdue</th>
+                <th><i class="fas fa-hand-holding-usd"></i> Fine</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for issue in overdue_books %}
+            <tr class="row-overdue">
+                <td>
+                    <div class="table-book-info">
+                        <strong>{{ issue.book.name }}</strong>
+                        <span class="text-muted">ISBN: {{ issue.book.isbn }}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="table-user-info">
+                        <strong>{{ issue.student.user.username }}</strong>
+                        <span class="text-muted">{{ issue.student.branch }} - {{ issue.student.classroom }}</span>
+                    </div>
+                </td>
+                <td>{{ issue.issued_date|date:"M d, Y" }}</td>
+                <td style="color: var(--danger); font-weight: 600;">{{ issue.expiry_date|date:"M d, Y" }}</td>
+                <td>
+                    <span class="status-badge badge-danger">
+                        {{ issue.days_until_due|add:"-1"|add:"-" }} days
+                    </span>
+                </td>
+                <td>
+                    <strong style="color: var(--danger); font-size: 1.1rem;">${{ issue.calculate_fine }}</strong>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state glass-effect">
+    <div class="success-icon" style="font-size: 4rem; color: var(--success); margin-bottom: 1.5rem;">
+        <i class="fas fa-check-double"></i>
+    </div>
+    <h3>Excellent record!</h3>
+    <p>No books are currently overdue. All students are following the schedule.</p>
+    <a href="{% url 'index' %}" class="btn btn-secondary">
+        <i class="fas fa-home"></i> Return to Dashboard
+    </a>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<style>
+    .row-overdue {
+        background: rgba(239, 68, 68, 0.03) !important;
+    }
+    
+    .row-overdue:hover {
+        background: rgba(239, 68, 68, 0.08) !important;
+    }
+    
+    .badge-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+</style>
+{% endblock %}
 {% endblock %}

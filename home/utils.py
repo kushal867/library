@@ -181,3 +181,64 @@ def get_student_book_history(student):
     return IssuedBook.objects.filter(
         student=student
     ).select_related('book').order_by('-issued_date')
+def get_filtered_books(search_query='', category_id=None, availability=None, sort_by='-date_added'):
+    """
+    Get books with search, filter, and sorting applied.
+    """
+    from .models import Book
+    from django.db.models import Q, Count, F
+
+    books = Book.objects.select_related('category').prefetch_related(
+        'issues'
+    ).annotate(
+        issued_count=Count('issues', filter=Q(issues__returned_date__isnull=True))
+    )
+
+    if search_query:
+        books = books.filter(
+            Q(name__icontains=search_query) |
+            Q(author__icontains=search_query) |
+            Q(isbn__icontains=search_query)
+        )
+
+    if category_id:
+        books = books.filter(category_id=category_id)
+
+    if availability == 'available':
+        books = books.annotate(
+            available_qty=F('quantity') - Count('issues', filter=Q(issues__returned_date__isnull=True))
+        ).filter(available_qty__gt=0)
+    elif availability == 'unavailable':
+        books = books.annotate(
+            available_qty=F('quantity') - Count('issues', filter=Q(issues__returned_date__isnull=True))
+        ).filter(available_qty__lte=0)
+
+    if sort_by in ['name', '-name', 'author', '-author', 'date_added', '-date_added']:
+        books = books.order_by(sort_by)
+    
+    return books
+
+
+def get_dashboard_stats():
+    """
+    Calculate essential statistics for the library dashboard.
+    """
+    from .models import Book, IssuedBook, Category
+    from django.db.models import Sum
+
+    total_books = Book.objects.count()
+    total_quantity = Book.objects.aggregate(total=Sum('quantity'))['total'] or 0
+    total_issued = IssuedBook.objects.filter(returned_date__isnull=True).count()
+    
+    overdue_count = IssuedBook.objects.filter(
+        returned_date__isnull=True,
+        expiry_date__lt=timezone.now().date()
+    ).count()
+
+    return {
+        'total_books': total_books,
+        'total_quantity': total_quantity,
+        'total_issued': total_issued,
+        'total_available': total_quantity - total_issued,
+        'overdue_count': overdue_count,
+    }

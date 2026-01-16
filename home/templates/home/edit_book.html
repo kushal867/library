@@ -1,122 +1,147 @@
-{% extends 'home/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Edit Book - Library Management{% endblock %}
+{% block title %}Edit Book - Library MS{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-warning text-dark">
-                    <h3 class="mb-0"><i class="fas fa-edit"></i> Edit Book: {{ book.name }}</h3>
-                </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.name.id_for_label }}" class="form-label">Book Name *</label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                                <div class="text-danger small">{{ form.name.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.author.id_for_label }}" class="form-label">Author *</label>
-                            {{ form.author }}
-                            {% if form.author.errors %}
-                                <div class="text-danger small">{{ form.author.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.isbn.id_for_label }}" class="form-label">ISBN * (Read-only)</label>
-                            {{ form.isbn }}
-                            <small class="form-text text-muted">ISBN cannot be changed once created</small>
-                            {% if form.isbn.errors %}
-                                <div class="text-danger small">{{ form.isbn.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.category.id_for_label }}" class="form-label">Category *</label>
-                            {{ form.category }}
-                            {% if form.category.errors %}
-                                <div class="text-danger small">{{ form.category.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.category_name.id_for_label }}" class="form-label">{{ form.category_name.label }}</label>
-                            {{ form.category_name }}
-                            <small class="form-text text-muted">{{ form.category_name.help_text }}</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                                <div class="text-danger small">{{ form.description.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.quantity.id_for_label }}" class="form-label">Quantity *</label>
-                            {{ form.quantity }}
-                            <small class="form-text text-muted">
-                                Currently issued: {{ book.quantity|add:"-"|add:book.available_quantity }} copies. 
-                                Quantity cannot be reduced below this number.
-                            </small>
-                            {% if form.quantity.errors %}
-                                <div class="text-danger small">{{ form.quantity.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.cover_image.id_for_label }}" class="form-label">Cover Image</label>
-                            {% if book.cover_image %}
-                                <div class="mb-2">
-                                    <img src="{{ book.cover_image.url }}" alt="{{ book.name }}" style="max-width: 200px;" class="img-thumbnail">
-                                    <p class="small text-muted">Current cover image</p>
-                                </div>
-                            {% endif %}
-                            {{ form.cover_image }}
-                            <small class="form-text text-muted">Leave empty to keep current image</small>
-                            {% if form.cover_image.errors %}
-                                <div class="text-danger small">{{ form.cover_image.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.publication_year.id_for_label }}" class="form-label">Publication Year</label>
-                            {{ form.publication_year }}
-                            {% if form.publication_year.errors %}
-                                <div class="text-danger small">{{ form.publication_year.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.publisher.id_for_label }}" class="form-label">Publisher</label>
-                            {{ form.publisher }}
-                            {% if form.publisher.errors %}
-                                <div class="text-danger small">{{ form.publisher.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'index' %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-warning">
-                                <i class="fas fa-save"></i> Update Book
-                            </button>
-                        </div>
-                    </form>
-                </div>
+<div class="auth-container stagger-item">
+    <h2><i class="fas fa-edit"></i> Edit Book Detail</h2>
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Update information for <strong>{{ book.name }}</strong></p>
+    
+    <form method="post" enctype="multipart/form-data" id="editBookForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="{{ form.name.id_for_label }}">
+                <i class="fas fa-heading"></i> Book Title
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-book input-icon"></i>
+                {{ form.name }}
             </div>
+            {% if form.name.errors %}
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.name.errors.0 }}</small>
+            {% endif %}
         </div>
-    </div>
+        
+        <div class="form-group">
+            <label for="{{ form.author.id_for_label }}">
+                <i class="fas fa-pen-fancy"></i> Author Name
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-user-edit input-icon"></i>
+                {{ form.author }}
+            </div>
+            {% if form.author.errors %}
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.author.errors.0 }}</small>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.isbn.id_for_label }}">
+                <i class="fas fa-barcode"></i> ISBN (Read-only)
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-hashtag input-icon"></i>
+                {{ form.isbn }}
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                <i class="fas fa-info-circle"></i> ISBN cannot be changed once created.
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.category.id_for_label }}">
+                <i class="fas fa-tags"></i> Category
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-layer-group input-icon"></i>
+                {{ form.category }}
+            </div>
+            {% if form.category.errors %}
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.category.errors.0 }}</small>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.quantity.id_for_label }}">
+                <i class="fas fa-sort-numeric-up"></i> Total Copies
+            </label>
+            <div class="input-wrapper">
+                <i class="fas fa-hashtag input-icon"></i>
+                {{ form.quantity }}
+            </div>
+            {% if form.quantity.errors %}
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.quantity.errors.0 }}</small>
+            {% endif %}
+            <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                <i class="fas fa-info-circle"></i> Currently {{ book.issued_count|default:0 }} copies are issued.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.cover_image.id_for_label }}">
+                <i class="fas fa-image"></i> Cover Image
+            </label>
+            {% if book.cover_image %}
+                <div style="margin-bottom: 1rem; border-radius: 12px; overflow: hidden; max-width: 150px; border: 1px solid rgba(255,255,255,0.1);">
+                    <img src="{{ book.cover_image.url }}" alt="Current Cover" style="width: 100%; display: block;">
+                </div>
+            {% endif %}
+            {{ form.cover_image }}
+            {% if form.cover_image.errors %}
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.cover_image.errors.0 }}</small>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">
+                <i class="fas fa-align-left"></i> Description
+            </label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.description.errors.0 }}</small>
+            {% endif %}
+        </div>
+        
+        <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" id="submitButton" class="btn btn-primary ripple glow" style="flex: 2;">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <a href="{% url 'book_detail' book.id %}" class="btn btn-secondary ripple" style="flex: 1;">
+                Cancel
+            </a>
+        </div>
+    </form>
 </div>
+
+{% block extra_js %}
+<script>
+    const form = document.getElementById('editBookForm');
+    const submitButton = document.getElementById('submitButton');
+    
+    form.addEventListener('submit', function(e) {
+        submitButton.classList.add('loading');
+        submitButton.disabled = true;
+    });
+</script>
+
+<style>
+    .error-message {
+        color: var(--danger);
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        animation: shake 0.3s ease;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+</style>
+{% endblock %}
 {% endblock %}

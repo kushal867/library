@@ -10,6 +10,7 @@ from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from .models import Book, Student, IssuedBook, Category, Subject, Teacher
 from .forms import IssueBookForm, AddBookForm, ReturnBookForm, EditBookForm, SubjectForm, TeacherForm
+from .utils import get_filtered_books, get_dashboard_stats
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 import csv
@@ -21,71 +22,35 @@ from django.core.files.base import ContentFile
 def index(request):
     """Home page showing all books with search, filter, and pagination"""
     
-    # Get all books with optimized queries
-    books = Book.objects.select_related('category').prefetch_related(
-        'issues'
-    ).annotate(
-        issued_count=Count('issues', filter=Q(issues__returned_date__isnull=True))
-    )
-    
-    # Search functionality
+    # Get filtered books using utility function
     search_query = request.GET.get('search', '')
-    if search_query:
-        books = books.filter(
-            Q(name__icontains=search_query) |
-            Q(author__icontains=search_query) |
-            Q(isbn__icontains=search_query)
-        )
-    
-    # Category filter
     category_id = request.GET.get('category')
-    if category_id:
-        books = books.filter(category_id=category_id)
-    
-    # Availability filter
     availability = request.GET.get('availability')
-    if availability == 'available':
-        # Filter books that have at least one copy remaining
-        books = books.annotate(
-            available_qty=F('quantity') - Count('issues', filter=Q(issues__returned_date__isnull=True))
-        ).filter(available_qty__gt=0)
-    elif availability == 'unavailable':
-        # Filter books with no copies remaining
-        books = books.annotate(
-            available_qty=F('quantity') - Count('issues', filter=Q(issues__returned_date__isnull=True))
-        ).filter(available_qty__lte=0)
-    
-    # Sort
     sort_by = request.GET.get('sort', '-date_added')
     
-    if sort_by in ['name', '-name', 'author', '-author', 'date_added', '-date_added']:
-        books = books.order_by(sort_by)
+    books = get_filtered_books(
+        search_query=search_query,
+        category_id=category_id,
+        availability=availability,
+        sort_by=sort_by
+    )
     
     # Pagination
-    paginator = Paginator(books, 12)  # 12 books per page
+    paginator = Paginator(books, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get dashboard statistics using utility function
+    stats = get_dashboard_stats()
+    
     # Get all categories for filter dropdown
     categories = Category.objects.all().order_by('name')
-    
-    # Library Statistics for Dashboard
-    total_books = Book.objects.count()
-    total_quantity = Book.objects.aggregate(total=Sum('quantity'))['total'] or 0
-    total_issued = IssuedBook.objects.filter(returned_date__isnull=True).count()
-    total_available = total_quantity - total_issued
     
     # Recent & Popular Books
     recent_books = Book.objects.select_related('category').order_by('-date_added')[:6]
     popular_books = Book.objects.select_related('category').annotate(
         issue_count=Count('issues')
     ).order_by('-issue_count')[:6]
-
-    # Overdue Books count
-    overdue_count = IssuedBook.objects.filter(
-        returned_date__isnull=True,
-        expiry_date__lt=timezone.now().date()
-    ).count()
 
     context = {
         'page_obj': page_obj,
@@ -94,13 +59,9 @@ def index(request):
         'selected_category': category_id,
         'selected_availability': availability,
         'selected_sort': sort_by,
-        'total_books': total_books,
-        'total_quantity': total_quantity,
-        'total_issued': total_issued,
-        'total_available': total_available,
-        'overdue_count': overdue_count,
         'recent_books': recent_books,
         'popular_books': popular_books,
+        **stats
     }
     
     return render(request, 'home/index.html', context)
