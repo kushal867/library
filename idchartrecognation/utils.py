@@ -125,12 +125,21 @@ def extract_face_from_image(
         enhanced_image = enhance_image(image)
         
         # Find face locations
-        # Try CNN model if requested, fallback to HOG if it fails
+        # Check if we should use CNN and if GPU is available
+        detected_model = model
+        if detected_model == 'cnn':
+            import dlib
+            if dlib.DLIB_USE_CUDA:
+                logger.info("Using CNN with CUDA for face detection")
+            else:
+                logger.warning("CNN requested but CUDA not available, falling back to HOG")
+                detected_model = 'hog'
+        
         try:
-            face_locations = face_recognition.face_locations(enhanced_image, model=model)
+            face_locations = face_recognition.face_locations(enhanced_image, model=detected_model)
         except Exception as e:
-            if model == 'cnn':
-                logger.warning("CNN model failed, falling back to HOG")
+            if detected_model == 'cnn':
+                logger.warning(f"CNN model failed: {str(e)}, falling back to HOG")
                 face_locations = face_recognition.face_locations(enhanced_image, model='hog')
             else:
                 raise e

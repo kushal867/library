@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
 from .serializers import (
     UserRegistrationSerializer, LoginSerializer,
-    TokenSerializer, UserSerializer
+    UserSerializer
 )
 from home.serializers import StudentSerializer
 import logging

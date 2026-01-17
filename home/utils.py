@@ -186,8 +186,7 @@ def get_filtered_books(search_query='', category_id=None, availability=None, sor
     Get books with search, filter, and sorting applied.
     """
     from .models import Book
-    from django.db.models import Q, Count, F
-
+    
     books = Book.objects.select_related('category').prefetch_related(
         'issues'
     ).annotate(

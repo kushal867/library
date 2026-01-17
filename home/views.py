@@ -363,11 +363,8 @@ def student_dashboard(request):
     # Overdue books
     overdue_books = current_books.filter(expiry_date__lt=timezone.now().date())
     
-    # Total fines
-    total_fines = IssuedBook.objects.filter(
-        student=student,
-        fine_amount__gt=0
-    ).aggregate(total=Sum('fine_amount'))['total'] or 0
+    # Total fines (including current overdue and unpaid returned)
+    total_fines = student.total_fines()
     
     context = {
         'student': student,
@@ -410,9 +407,7 @@ def library_statistics(request):
     ).count()
     
     # Fine statistics
-    total_fines = IssuedBook.objects.filter(
-        fine_amount__gt=0
-    ).aggregate(total=Sum('fine_amount'))['total'] or 0
+    total_fines = sum(s.total_fines() for s in Student.objects.all())
     
     # Most popular books (most issued)
     popular_books = Book.objects.annotate(

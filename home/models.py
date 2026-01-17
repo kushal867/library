@@ -126,9 +126,19 @@ class Student(models.Model):
     
     def total_fines(self):
         """Calculate total unpaid fines for this student"""
+        # Fines from currently overdue books (not yet returned)
         overdue_books = self.get_overdue_books()
-        total = sum(book.calculate_fine() for book in overdue_books)
-        return total
+        current_overdue_fines = sum(book.calculate_fine() for book in overdue_books)
+        
+        # Fines from books already returned but hasn't been paid
+        unpaid_returned_fines = IssuedBook.objects.filter(
+            student=self,
+            returned_date__isnull=False,
+            fine_amount__gt=0,
+            fine_paid=False
+        ).aggregate(total=models.Sum('fine_amount'))['total'] or 0
+        
+        return current_overdue_fines + float(unpaid_returned_fines)
     
     @property
     def has_overdue_books(self):
