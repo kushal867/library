@@ -168,7 +168,7 @@ class RecognitionLog(models.Model):
     confidence = models.FloatField(
         null=True,
         blank=True,
-        help_text='Match confidence score (lower is better, < 0.6 is good match)'
+        help_text='Match confidence percentage (0-100%, higher is better)'
     )
     timestamp = models.DateTimeField(auto_now_add=True)
     details = models.TextField(blank=True, help_text='Additional details or error messages')

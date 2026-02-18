@@ -81,7 +81,8 @@ class LogoutAPIView(APIView):
         try:
             # Delete the user's token
             request.user.auth_token.delete()
-        except:
+        except Exception as e:
+            logger.error(f"Error during logout: {str(e)}")
             pass
         
         # Logout the user

@@ -56,6 +56,24 @@ def dashboard(request):
         'matched_student__user'
     ).order_by('-timestamp')[:10]
     
+    # Build daily recognition trends for the last 7 days
+    daily_stats = []
+    for i in range(7):
+        date = (timezone.now() - timedelta(days=i)).date()
+        success_count = RecognitionLog.objects.filter(
+            timestamp__date=date, result='success'
+        ).count()
+        fail_count = RecognitionLog.objects.filter(
+            timestamp__date=date
+        ).exclude(result='success').count()
+        
+        daily_stats.append({
+            'date': date.strftime('%b %d'),
+            'success': success_count,
+            'fail': fail_count
+        })
+    daily_stats.reverse()
+    
     context = {
         'total_enrolled': total_enrolled,
         'total_students': total_students,
@@ -63,6 +81,7 @@ def dashboard(request):
         'recent_enrollments': recent_enrollments,
         'recognition_stats': recognition_stats,
         'recent_recognitions': recent_recognitions,
+        'daily_stats': daily_stats,
     }
     
     return render(request, 'idchartrecognation/dashboard.html', context)
