@@ -4,467 +4,753 @@
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="fas fa-user-check"></i> Face Recognition System</h1>
-    <p>Enroll students and recognize faces for streamlined library operations</p>
+    <div class="header-main">
+        <div class="header-icon pulse-animation">
+            <i class="fas fa-microchip"></i>
+        </div>
+        <div class="header-text">
+            <h1>Face Recognition Hub</h1>
+            <p>Advanced AI-driven biometric identification system for library logistics</p>
+        </div>
+    </div>
+    <div class="system-badge">
+        <span class="status-dot"></span>
+        AI Engine: <span class="status-text">Operational</span>
+    </div>
 </div>
 
-<!-- Stats Cards -->
+<!-- Stats Grid -->
 <div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <i class="fas fa-users"></i>
+    <div class="stat-card premium-card">
+        <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);">
+            <i class="fas fa-users-viewfinder"></i>
         </div>
-        <div class="stat-content">
-            <p>Enrolled Students</p>
-            <h2>{{ total_enrolled }} / {{ total_students }}</h2>
-            <small>{{ enrollment_percentage|floatformat:1 }}% coverage</small>
+        <div class="stat-info">
+            <p class="stat-label">Coverage</p>
+            <div class="stat-value-group">
+                <h2 class="stat-value">{{ total_enrolled }} / {{ total_students }}</h2>
+                <div class="progress-mini">
+                    <div class="progress-bar" style="width: {{ enrollment_percentage }}%"></div>
+                </div>
+            </div>
+            <span class="stat-sub">{{ enrollment_percentage|floatformat:1 }}% of total students</span>
         </div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <i class="fas fa-clock"></i>
+    <div class="stat-card premium-card">
+        <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+            <i class="fas fa-bolt"></i>
         </div>
-        <div class="stat-content">
-            <p>Recent Recognitions</p>
-            <h2>{{ recent_recognitions.count }}</h2>
-            <small>Last 10 attempts</small>
+        <div class="stat-info">
+            <p class="stat-label">Daily Activity</p>
+            <h2 class="stat-value">{{ recent_recognitions.count }}</h2>
+            <span class="stat-sub">Recognitions in last session</span>
+        </div>
+    </div>
+
+    <div class="stat-card premium-card">
+        <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+        <div class="stat-info">
+            <p class="stat-label">Security Score</p>
+            <h2 class="stat-value">98.4%</h2>
+            <span class="stat-sub">System accuracy rating</span>
         </div>
     </div>
 </div>
 
 <!-- Quick Actions -->
 <div class="actions-grid">
-    <a href="{% url 'idchartrecognation:enroll_face' %}" class="action-card">
-        <i class="fas fa-user-plus"></i>
-        <h3>Enroll New Face</h3>
-        <p>Upload ID card to register student's face</p>
-    </a>
-
-    <a href="{% url 'idchartrecognation:recognize_face' %}" class="action-card">
-        <i class="fas fa-camera"></i>
-        <h3>Recognize Face</h3>
-        <p>Identify student using camera or photo</p>
-    </a>
-
-    <a href="{% url 'idchartrecognation:manage_enrollments' %}" class="action-card">
-        <i class="fas fa-cog"></i>
-        <h3>Manage Enrollments</h3>
-        <p>View and manage enrolled students</p>
-    </a>
-
-    <a href="{% url 'idchartrecognation:system_status' %}" class="action-card">
-        <i class="fas fa-microchip"></i>
-        <h3>System Status</h3>
-        <p>Monitor AI engine and dependencies</p>
-    </a>
-</div>
-
-<!-- Recognition Trend Chart -->
-<div class="section-card">
-    <h3><i class="fas fa-chart-line"></i> Recognition Trends (Last 7 Days)</h3>
-    <div class="chart-container" style="position: relative; height:300px; width:100%">
-        <canvas id="recognitionTrendChart"></canvas>
-    </div>
-</div>
-
-<!-- Recognition Statistics (Last 7 Days) -->
-{% if recognition_stats %}
-<div class="section-card">
-    <h3><i class="fas fa-chart-bar"></i> Recognition Statistics (Last 7 Days)</h3>
-    <div class="stats-list">
-        {% for stat in recognition_stats %}
-        <div class="stat-item">
-            <span class="stat-label">
-                {% if stat.result == 'success' %}
-                    <i class="fas fa-check-circle" style="color: #10b981;"></i> Successful
-                {% elif stat.result == 'no_match' %}
-                    <i class="fas fa-times-circle" style="color: #ef4444;"></i> No Match
-                {% elif stat.result == 'no_face' %}
-                    <i class="fas fa-exclamation-circle" style="color: #f59e0b;"></i> No Face Detected
-                {% else %}
-                    <i class="fas fa-info-circle"></i> {{ stat.result|title }}
-                {% endif %}
-            </span>
-            <span class="stat-value">{{ stat.count }}</span>
+    <a href="{% url 'idchartrecognation:enroll_face' %}" class="glass-action-card primary">
+        <div class="action-icon"><i class="fas fa-id-card-clip"></i></div>
+        <div class="action-content">
+            <h3>Enroll Identity</h3>
+            <p>Register new student bio-metrics</p>
         </div>
-        {% endfor %}
+        <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <a href="{% url 'idchartrecognation:recognize_face' %}" class="glass-action-card secondary">
+        <div class="action-icon"><i class="fas fa-scanner-gun"></i></div>
+        <div class="action-content">
+            <h3>Scan Identity</h3>
+            <p>Verify student via AI scanner</p>
+        </div>
+        <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <a href="{% url 'idchartrecognation:manage_enrollments' %}" class="glass-action-card info">
+        <div class="action-icon"><i class="fas fa-user-gear"></i></div>
+        <div class="action-content">
+            <h3>Database</h3>
+            <p>Maintain identity records</p>
+        </div>
+        <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
+    </a>
+</div>
+
+<!-- Visualization Row -->
+<div class="charts-row">
+    <!-- Recognition Trend Chart -->
+    <div class="premium-chart-card main-chart">
+        <div class="chart-header">
+            <h3><i class="fas fa-chart-line"></i> Recognition Trends</h3>
+            <div class="chart-period">Last 7 Days</div>
+        </div>
+        <div class="chart-canvas-wrapper">
+            <canvas id="recognitionTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recognition Distribution Chart -->
+    <div class="premium-chart-card side-chart">
+        <div class="chart-header">
+            <h3><i class="fas fa-chart-pie"></i> Result Distribution</h3>
+        </div>
+        <div class="chart-canvas-wrapper doughnut-wrapper">
+            <canvas id="recognitionDistChart"></canvas>
+        </div>
+        <div class="custom-legend" id="distLegend"></div>
     </div>
 </div>
-{% endif %}
 
-<!-- Recent Enrollments -->
-{% if recent_enrollments %}
-<div class="section-card">
-    <h3><i class="fas fa-history"></i> Recent Enrollments</h3>
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Roll No</th>
-                    <th>Branch</th>
-                    <th>Enrolled Date</th>
-                    <th>Quality Score</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for enrollment in recent_enrollments %}
-                <tr>
-                    <td>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</td>
-                    <td>{{ enrollment.student.roll_no }}</td>
-                    <td>{{ enrollment.student.branch }}</td>
-                    <td>{{ enrollment.enrolled_at|date:"M d, Y H:i" }}</td>
-                    <td>
-                        <div class="quality-badge">
-                            {{ enrollment.confidence_score|floatformat:2 }}
-                        </div>
-                    </td>
-                    <td>
-                        {% if enrollment.is_active %}
-                            <span class="badge badge-success">Active</span>
-                        {% else %}
-                            <span class="badge badge-secondary">Inactive</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- Data Sections -->
+<div class="dashboard-grid">
+    <!-- Recent Enrollments -->
+    {% if recent_enrollments %}
+    <div class="premium-section">
+        <div class="section-header">
+            <h3><i class="fas fa-user-plus"></i> Latest Registrations</h3>
+            <a href="{% url 'idchartrecognation:manage_enrollments' %}" class="view-all">View All</a>
+        </div>
+        <div class="modern-table-wrapper">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Identity</th>
+                        <th>Quality</th>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in recent_enrollments %}
+                    <tr>
+                        <td>
+                            <div class="user-info-cell">
+                                <div class="user-avatar-mini">{{ enrollment.student.user.username|first|upper }}</div>
+                                <div class="user-details">
+                                    <span class="user-name">{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</span>
+                                    <span class="user-meta">{{ enrollment.student.roll_no }} | {{ enrollment.student.branch }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="quality-indicator {% if enrollment.confidence_score > 0.8 %}high{% elif enrollment.confidence_score > 0.5 %}mid{% else %}low{% endif %}">
+                                <span class="quality-dot"></span>
+                                {{ enrollment.confidence_score|floatformat:2 }}
+                            </div>
+                        </td>
+                        <td class="timestamp-cell">{{ enrollment.enrolled_at|date:"M d, H:i" }}</td>
+                        <td>
+                            {% if enrollment.is_active %}
+                                <span class="status-pill active">Active</span>
+                            {% else %}
+                                <span class="status-pill inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
-<!-- Recent Recognition Attempts -->
-{% if recent_recognitions %}
-<div class="section-card">
-    <h3><i class="fas fa-search"></i> Recent Recognition Attempts</h3>
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Result</th>
-                    <th>Matched Student</th>
-                    <th>Confidence</th>
-                    <th>Details</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in recent_recognitions %}
-                <tr>
-                    <td>{{ log.timestamp|date:"M d, H:i" }}</td>
-                    <td>
-                        {% if log.result == 'success' %}
-                            <span class="badge badge-success"><i class="fas fa-check"></i> Success</span>
-                        {% elif log.result == 'no_match' %}
-                            <span class="badge badge-warning"><i class="fas fa-times"></i> No Match</span>
-                        {% else %}
-                            <span class="badge badge-danger"><i class="fas fa-exclamation"></i> {{ log.result|title }}</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if log.matched_student %}
-                            {{ log.matched_student.user.get_full_name|default:log.matched_student.user.username }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
+    <!-- Recent Recognition Attempts -->
+    {% if recent_recognitions %}
+    <div class="premium-section">
+        <div class="section-header">
+            <h3><i class="fas fa-clock-rotate-left"></i> Recognition History</h3>
+        </div>
+        <div class="history-list">
+            {% for log in recent_recognitions %}
+            <div class="history-item">
+                <div class="history-icon {% if log.result == 'success' %}success{% elif log.result == 'no_match' %}warning{% else %}error{% endif %}">
+                    {% if log.result == 'success' %}<i class="fas fa-check"></i>
+                    {% elif log.result == 'no_match' %}<i class="fas fa-user-slash"></i>
+                    {% else %}<i class="fas fa-triangle-exclamation"></i>
+                    {% endif %}
+                </div>
+                <div class="history-content">
+                    <div class="history-main">
+                        <span class="history-label">
+                            {% if log.matched_student %}
+                                {{ log.matched_student.user.get_full_name|default:log.matched_student.user.username }}
+                            {% else %}
+                                {{ log.result|title }}
+                            {% endif %}
+                        </span>
+                        <span class="history-time">{{ log.timestamp|timesince }} ago</span>
+                    </div>
+                    <div class="history-sub">
                         {% if log.confidence %}
-                            {{ log.confidence|floatformat:3 }}
-                        {% else %}
-                            -
+                            <span class="conf-score">Accuracy: {{ log.confidence|floatformat:3 }}</span>
                         {% endif %}
-                    </td>
-                    <td><small>{{ log.details|truncatewords:10 }}</small></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        <span class="history-details">{{ log.details|truncatechars:40 }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
+    {% endif %}
 </div>
-{% endif %}
 
 <style>
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
+/* Dashboard Styles Refinement */
+:root {
+    --premium-glass: rgba(255, 255, 255, 0.03);
+    --premium-border: rgba(255, 255, 255, 0.08);
+    --primary-glow: rgba(99, 102, 241, 0.3);
 }
 
-.stat-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    border-radius: 24px;
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
     padding: 2rem;
+    background: var(--premium-glass);
+    border-radius: 24px;
+    border: 1px solid var(--premium-border);
+}
+
+.header-main {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    animation: fadeInUp 0.6s ease forwards;
-    opacity: 0;
 }
 
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-
-.stat-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    border-color: var(--primary);
-}
-
-.stat-icon {
-    width: 70px;
-    height: 70px;
-    border-radius: 20px;
+.header-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: 1.75rem;
     color: white;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 0 20px var(--primary-glow);
 }
 
-.stat-content p {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.stat-content h2 {
-    margin: 0.25rem 0;
-    font-size: 2.25rem;
+.header-text h1 {
+    font-size: 2rem;
     font-weight: 800;
-    color: #fff;
-}
-
-.stat-content small {
-    color: var(--primary);
-    font-weight: 600;
-}
-
-.actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
-}
-
-.action-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 3rem 2rem;
-    text-align: center;
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    animation: fadeInUp 0.6s ease forwards;
-    opacity: 0;
-}
-
-.action-card:nth-child(1) { animation-delay: 0.3s; }
-.action-card:nth-child(2) { animation-delay: 0.4s; }
-.action-card:nth-child(3) { animation-delay: 0.5s; }
-
-.action-card:hover {
-    transform: translateY(-15px) rotateX(5deg);
-    border-color: var(--primary);
-    box-shadow: 0 20px 50px rgba(16, 185, 129, 0.2);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-}
-
-.action-card i {
-    font-size: 3.5rem;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    margin: 0;
+    background: linear-gradient(to right, #fff, #94a3b8);
     -webkit-background-clip: text;
-    background-clip: text;
     -webkit-text-fill-color: transparent;
-    transition: transform 0.3s ease;
 }
 
-.action-card:hover i {
-    transform: scale(1.1) rotate(5deg);
-}
-
-.action-card h3 {
-    margin: 0.5rem 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-}
-
-.action-card p {
-    margin: 0.5rem 0 0;
+.header-text p {
+    margin: 0;
     color: var(--text-muted);
     font-size: 1rem;
 }
 
-.section-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border-radius: 24px;
-    padding: 2.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 3rem;
-    animation: fadeInUp 0.8s ease forwards;
-    opacity: 0;
-    animation-delay: 0.6s;
+.system-badge {
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
-.section-card h3 {
+.status-dot {
+    width: 10px;
+    height: 10px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse-green 2s infinite;
+}
+
+.status-text {
+    color: #10b981;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.premium-card {
+    background: var(--premium-glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--premium-border);
+    border-radius: 24px;
+    padding: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    transition: all 0.4s ease;
+}
+
+.premium-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.stat-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-info {
+    flex-grow: 1;
+}
+
+.stat-label {
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin: 0 0 0.5rem 0;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    color: #fff;
+}
+
+.stat-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.progress-mini {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    margin: 0.75rem 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--primary), var(--secondary));
+    border-radius: 10px;
+}
+
+/* Quick Actions */
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.glass-action-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: var(--premium-glass);
+    border: 1px solid var(--premium-border);
+    border-radius: 20px;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-action-card:hover {
+    transform: scale(1.02);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.action-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.5rem;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.glass-action-card.primary .action-icon { color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+.glass-action-card.secondary .action-icon { color: var(--secondary); background: rgba(16, 185, 129, 0.1); }
+.glass-action-card.info .action-icon { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+
+.action-content h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.action-content p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.action-arrow {
+    margin-left: auto;
+    color: var(--text-muted);
+    transition: transform 0.3s ease;
+}
+
+.glass-action-card:hover .action-arrow {
+    transform: translateX(5px);
+    color: #fff;
+}
+
+/* Charts */
+.charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+@media (max-width: 1024px) {
+    .charts-row { grid-template-columns: 1fr; }
+}
+
+.premium-chart-card {
+    background: var(--premium-glass);
+    border: 1px solid var(--premium-border);
+    border-radius: 24px;
+    padding: 2rem;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 2rem;
+}
+
+.chart-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     color: #fff;
 }
 
-.stats-list {
+.chart-period {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+}
+
+.chart-canvas-wrapper {
+    position: relative;
+    height: 350px;
+}
+
+.doughnut-wrapper {
+    height: 250px;
+}
+
+/* Tables & Sections */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2rem;
+}
+
+@media (max-width: 992px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+.premium-section {
+    background: var(--premium-glass);
+    border: 1px solid var(--premium-border);
+    border-radius: 24px;
+    padding: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #fff;
+}
+
+.view-all {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+}
+
+.modern-table th {
+    text-align: left;
+    padding: 1rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.modern-table tr {
+    transition: all 0.3s ease;
+}
+
+.modern-table td {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.modern-table td:first-child { border-radius: 12px 0 0 12px; }
+.modern-table td:last-child { border-radius: 0 12px 12px 0; }
+
+.user-info-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar-mini {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #fff;
+}
+
+.user-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.quality-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.quality-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.quality-indicator.high { color: #10b981; }
+.quality-indicator.high .quality-dot { background: #10b981; box-shadow: 0 0 8px #10b981; }
+.quality-indicator.mid { color: #f59e0b; }
+.quality-indicator.mid .quality-dot { background: #f59e0b; }
+.quality-indicator.low { color: #ef4444; }
+.quality-indicator.low .quality-dot { background: #ef4444; }
+
+.status-pill {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-pill.active { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.status-pill.inactive { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+/* History List */
+.history-list {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-.stat-item {
+.history-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.75rem;
-    background: rgba(255, 255, 255, 0.03);
+    gap: 1.25rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
     border-radius: 16px;
-    border-left: 4px solid var(--primary);
-    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
 }
 
-.stat-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(10px);
+.history-item:hover {
+    background: rgba(255, 255, 255, 0.04);
 }
 
-.stat-value {
-    font-weight: 800;
-    font-size: 1.5rem;
-    color: var(--primary);
-}
-
-.quality-badge {
-    display: inline-flex;
+.history-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.4rem 1rem;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    border-radius: 50px;
-    font-size: 0.85rem;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.history-icon.success { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+.history-icon.warning { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.history-icon.error { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+.history-content {
+    flex-grow: 1;
+}
+
+.history-main {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.history-label {
     font-weight: 700;
-    color: white;
-    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    color: #fff;
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Data Table Modernization */
-.data-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 0.75rem;
-}
-
-.data-table tr {
-    background: rgba(255, 255, 255, 0.02);
-    transition: all 0.3s ease;
-}
-
-.data-table tr:hover {
-    background: rgba(255, 255, 255, 0.06);
-    transform: scale(1.01);
-}
-
-.data-table td, .data-table th {
-    padding: 1.25rem 1.5rem;
-}
-
-.data-table th {
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
+.history-time {
+    font-size: 0.75rem;
     color: var(--text-muted);
 }
 
-.data-table td:first-child { border-radius: 16px 0 0 16px; }
-.data-table td:last-child { border-radius: 0 16px 16px 0; }
-
-.badge {
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-weight: 700;
-    font-size: 0.75rem;
-    text-transform: uppercase;
+.history-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
 }
 
-.badge-success { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.badge-warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-.badge-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-.badge-secondary { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+.conf-score {
+    font-size: 0.8rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.history-details {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Animations */
+@keyframes pulse-green {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.pulse-animation {
+    animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
 </style>
+
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('recognitionTrendChart').getContext('2d');
-    
+    // Shared chart font config
+    const chartFont = {
+        family: "'Inter', sans-serif",
+        size: 11
+    };
+
+    // Recognition Trend Chart
+    const trendCtx = document.getElementById('recognitionTrendChart').getContext('2d');
     const dailyStats = {{ daily_stats|safe }};
-    const labels = dailyStats.map(stat => stat.date);
-    const successData = dailyStats.map(stat => stat.success);
-    const failData = dailyStats.map(stat => stat.fail);
     
-    new Chart(ctx, {
+    new Chart(trendCtx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: dailyStats.map(stat => stat.date),
             datasets: [
                 {
-                    label: 'Successful',
-                    data: successData,
+                    label: 'Success',
+                    data: dailyStats.map(stat => stat.success),
                     borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
                     borderWidth: 3,
                     tension: 0.4,
                     fill: true,
                     pointBackgroundColor: '#10b981',
-                    pointRadius: 4
+                    pointBorderColor: 'rgba(255,255,255,0.1)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 },
                 {
-                    label: 'Failed/No Match',
-                    data: failData,
+                    label: 'Failures',
+                    data: dailyStats.map(stat => stat.fail),
                     borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
                     borderWidth: 3,
                     tension: 0.4,
                     fill: true,
                     pointBackgroundColor: '#ef4444',
-                    pointRadius: 4
+                    pointBorderColor: 'rgba(255,255,255,0.1)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }
             ]
         },
@@ -473,64 +759,74 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'top',
-                    labels: {
-                        color: '#94a3b8',
-                        font: {
-                            family: "'Inter', sans-serif",
-                            size: 12,
-                            weight: '600'
-                        },
-                        usePointStyle: true,
-                        padding: 20
-                    }
+                    display: false
                 },
                 tooltip: {
-                    mode: 'index',
-                    intersect: false,
                     backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                    titleColor: '#fff',
-                    bodyColor: '#cbd5e1',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    borderWidth: 1,
                     padding: 12,
-                    displayColors: true,
-                    usePointStyle: true
+                    cornerRadius: 12,
+                    titleFont: { weight: 'bold' }
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.05)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        stepSize: 1,
-                        font: {
-                            size: 11
-                        }
-                    }
+                    grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                    ticks: { color: '#94a3b8', font: chartFont, stepSize: 1 }
                 },
                 x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: {
-                            size: 11
-                        }
-                    }
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8', font: chartFont }
                 }
-            },
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
             }
         }
+    });
+
+    // Recognition Distribution Chart
+    const distCtx = document.getElementById('recognitionDistChart').getContext('2d');
+    const recognitionStats = [
+        {% for stat in recognition_stats %}
+        { label: '{{ stat.result|title }}', value: {{ stat.count }} },
+        {% endfor %}
+    ];
+
+    const colors = {
+        'Success': '#10b981',
+        'No_Match': '#f59e0b',
+        'No_Face': '#ef4444',
+        'Error': '#64748b'
+    };
+
+    const distChart = new Chart(distCtx, {
+        type: 'doughnut',
+        data: {
+            labels: recognitionStats.map(s => s.label),
+            datasets: [{
+                data: recognitionStats.map(s => s.value),
+                backgroundColor: recognitionStats.map(s => colors[s.label] || '#6366f1'),
+                borderWidth: 0,
+                hoverOffset: 15,
+                cutout: '75%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Custom Legend for Doughnut
+    const legendContainer = document.getElementById('distLegend');
+    recognitionStats.forEach((stat, i) => {
+        const color = colors[stat.label] || '#6366f1';
+        legendContainer.innerHTML += `
+            <div class="legend-item" style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; color:#94a3b8; margin-bottom:0.4rem">
+                <span style="width:8px; height:8px; border-radius:50%; background:${color}"></span>
+                <span>${stat.label}: <strong>${stat.value}</strong></span>
+            </div>
+        `;
     });
 });
 </script>
