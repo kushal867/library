@@ -87,10 +87,14 @@
                     </td>
                     <td>
                         <div class="quality-score-wrapper">
-                            <div class="quality-bar">
-                                <div class="quality-fill" style="width: {% widthratio enrollment.confidence_score 1 100 %}%"></div>
+                            <div class="quality-bar-container">
+                                <div class="quality-bar">
+                                    <div class="quality-fill" 
+                                         data-score="{{ enrollment.confidence_score }}"
+                                         style="width: 0%"></div>
+                                </div>
+                                <span class="quality-text">{{ enrollment.confidence_score|floatformat:2 }}</span>
                             </div>
-                            <span class="quality-text">{{ enrollment.confidence_score|floatformat:2 }}</span>
                         </div>
                     </td>
                     <td>
@@ -102,10 +106,14 @@
                     </td>
                     <td>
                         <div class="table-actions justify-center">
+                            <button class="action-btn-styled" onclick="viewImage('{{ enrollment.id_card.image.url }}', '{{ enrollment.student.user.username }}')" title="View Enrollment Photo">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            
                             {% if enrollment.is_active %}
                                 <form method="post" action="{% url 'idchartrecognation:deactivate_encoding' enrollment.id %}" style="display: inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="action-btn-styled delete" title="Deactivate" 
+                                    <button type="submit" class="action-btn-styled warning" title="Deactivate" 
                                             onclick="return confirm('Suspend this biometric ID?')">
                                         <i class="fas fa-pause"></i>
                                     </button>
@@ -113,13 +121,22 @@
                             {% else %}
                                 <form method="post" action="{% url 'idchartrecognation:activate_encoding' enrollment.id %}" style="display: inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="action-btn-styled edit" title="Activate"
+                                    <button type="submit" class="action-btn-styled success" title="Activate"
                                             onclick="return confirm('Re-activate this biometric ID?')">
                                         <i class="fas fa-play"></i>
                                     </button>
                                 </form>
                             {% endif %}
-                            <a href="#" class="action-btn-styled" title="View Logs"><i class="fas fa-history"></i></a>
+                            
+                            <form method="post" action="{% url 'idchartrecognation:delete_encoding' enrollment.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn-styled delete" title="Delete enrollment permanently"
+                                        onclick="return confirm('Are you sure you want to PERMANENTLY delete this enrollment? This cannot be undone.')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                            
+                            <a href="{% url 'idchartrecognation:dashboard' %}" class="action-btn-styled" title="View Logs"><i class="fas fa-history"></i></a>
                         </div>
                     </td>
                 </tr>
@@ -127,8 +144,9 @@
                 <tr>
                     <td colspan="6" class="text-center py-5">
                         <div class="empty-state-small">
-                            <i class="fas fa-user-slash mb-3"></i>
+                            <i class="fas fa-user-slash mb-3" style="font-size: 3rem; color: var(--text-muted); opacity: 0.3;"></i>
                             <p>No biometric enrollments found.</p>
+                            <a href="{% url 'idchartrecognation:enroll_face' %}" class="btn btn-sm btn-outline-primary mt-3">Start Enrollment</a>
                         </div>
                     </td>
                 </tr>
@@ -144,52 +162,110 @@
     </a>
 </div>
 
+<!-- Image View Modal -->
+<div id="imageModal" class="custom-modal">
+    <div class="modal-content glass-panel ripple-glow">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-circle"></i> Enrollment Photo: <span id="modalUsername"></span></h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="image-preview-container">
+                <img id="enrolledImage" src="" alt="Enrolled student face">
+                <div class="scanner-line"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .student-info-cell { display: flex; align-items: center; gap: 1rem; }
 .mini-avatar { 
-    width: 36px; height: 36px; background: var(--accent); 
-    border-radius: 10px; display: flex; align-items: center; 
+    width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #4f46e5); 
+    border-radius: 12px; display: flex; align-items: center; 
     justify-content: center; font-weight: bold; color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 .info-text { display: flex; flex-direction: column; }
+.info-text strong { font-size: 0.95rem; }
 .info-text span { font-size: 0.75rem; color: var(--text-muted); }
 
 .branch-roll { display: flex; align-items: center; gap: 0.5rem; }
 .badge-outline-indigo { 
-    background: transparent; border: 1px solid #6366f1; 
-    color: #818cf8; font-size: 0.7rem; padding: 2px 8px;
+    background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.3); 
+    color: #818cf8; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;
 }
-.roll-no { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted); }
+.roll-no { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted); }
 
 .date-cell { display: flex; flex-direction: column; }
+.main-date { font-size: 0.85rem; font-weight: 500; }
 .sub-date { font-size: 0.75rem; color: var(--text-muted); }
 
-.quality-score-wrapper { width: 100px; }
-.quality-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
-.quality-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #10b981); border-radius: 3px; }
-.quality-text { font-size: 0.75rem; font-weight: 600; }
+.quality-score-wrapper { width: 120px; }
+.quality-bar-container { display: flex; flex-direction: column; gap: 4px; }
+.quality-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; }
+.quality-fill { 
+    height: 100%; 
+    border-radius: 10px; 
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #6366f1;
+}
+.quality-text { font-size: 0.75rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
 
 .status-pill { 
     display: inline-flex; align-items: center; gap: 6px; 
-    padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
 }
-.status-pill.active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.status-pill.inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.status-pill.active { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.status-pill.inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
 .status-pill i { font-size: 0.5rem; }
 
 .action-btn-styled {
     width: 32px; height: 32px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    transition: 0.3s; color: var(--text-muted);
+    transition: all 0.2s ease; color: var(--text-muted);
     background: rgba(255,255,255,0.03);
-    border: none; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
 }
-.action-btn-styled:hover { transform: scale(1.1); color: white; }
-.action-btn-styled.edit:hover { background: var(--accent); }
-.action-btn-styled.delete:hover { background: #f59e0b; }
+.action-btn-styled:hover { transform: translateY(-2px); color: white; background: rgba(255,255,255,0.1); }
+.action-btn-styled.success:hover { background: #10b981; border-color: #10b981; color: white; }
+.action-btn-styled.warning:hover { background: #f59e0b; border-color: #f59e0b; color: white; }
+.action-btn-styled.delete:hover { background: #ef4444; border-color: #ef4444; color: white; }
 
 .justify-center { justify-content: center; gap: 0.5rem; }
-.footer-actions { display: flex; justify-content: space-between; }
+
+/* Modal Styles */
+.custom-modal {
+    display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+    width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px); align-items: center; justify-content: center;
+}
+.modal-content {
+    width: 90%; max-width: 500px; padding: 1.5rem; position: relative;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.modal-header h3 { margin: 0; font-size: 1.2rem; }
+.close-modal { background: none; border: none; color: white; font-size: 2rem; cursor: pointer; }
+
+.image-preview-container {
+    width: 100%; border-radius: 12px; overflow: hidden; position: relative;
+    background: #000; display: flex; align-items: center; justify-content: center;
+    min-height: 300px; border: 1px solid rgba(255,255,255,0.1);
+}
+.image-preview-container img { max-width: 100%; max-height: 60vh; object-fit: contain; }
+
+.scanner-line {
+    position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+    background: var(--accent); opacity: 0.5; box-shadow: 0 0 15px var(--accent);
+    animation: scan 3s linear infinite; pointer-events: none;
+}
+@keyframes scan {
+    0% { top: 0%; }
+    50% { top: 100%; }
+    100% { top: 0%; }
+}
 </style>
 
 {% block extra_js %}
@@ -210,16 +286,49 @@ function filterEnrollments() {
     });
 }
 
+function viewImage(url, username) {
+    document.getElementById('enrolledImage').src = url;
+    document.getElementById('modalUsername').textContent = '@' + username;
+    document.getElementById('imageModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('imageModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    if (event.target == document.getElementById('imageModal')) {
+        closeModal();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Stats calculation
+    // Stats calculation and animation
     const rows = document.querySelectorAll('.enrollment-row');
     let active = 0;
     let totalScore = 0;
     
     rows.forEach(row => {
         if (row.getAttribute('data-active') === 'true') active++;
-        const score = parseFloat(row.querySelector('.quality-text').textContent);
+        
+        // Quality bar animation and color
+        const fill = row.querySelector('.quality-fill');
+        const score = parseFloat(fill.getAttribute('data-score'));
         totalScore += score;
+        
+        const percentage = Math.min(score * 100, 100);
+        
+        // Set color based on score
+        let color = '#ef4444'; // Red for low
+        if (score >= 0.7) color = '#10b981'; // Green for high
+        else if (score >= 0.4) color = '#f59e0b'; // Amber for medium
+        
+        fill.style.backgroundColor = color;
+        fill.style.boxShadow = `0 0 10px ${color}44`;
+        
+        setTimeout(() => {
+            fill.style.width = percentage + '%';
+        }, 300);
     });
     
     document.getElementById('activeEnrollments').textContent = active;
@@ -229,8 +338,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
-{% endblock %}
-
 {% endblock %}
 
 {% endblock %}

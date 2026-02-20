@@ -516,6 +516,23 @@ def activate_encoding(request, encoding_id):
         return redirect('idchartrecognation:manage_enrollments')
     
     return redirect('idchartrecognation:manage_enrollments')
+@login_required
+def delete_encoding(request, encoding_id):
+    """Delete a face encoding"""
+    
+    encoding = get_object_or_404(FaceEncoding, id=encoding_id)
+    
+    if request.method == 'POST':
+        student_name = encoding.student.user.username
+        encoding.delete()
+        messages.success(
+            request,
+            f'Face encoding for {student_name} has been permanently deleted.'
+        )
+        return redirect('idchartrecognation:manage_enrollments')
+    
+    return redirect('idchartrecognation:manage_enrollments')
+
 
 
 @login_required
