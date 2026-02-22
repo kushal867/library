@@ -3,91 +3,137 @@
 {% block title %}Add Book - Library MS{% endblock %}
 
 {% block content %}
-<div class="auth-container stagger-item">
+<div class="auth-container stagger-item" style="max-width: 800px;">
     <h2><i class="fas fa-book-medical"></i> Add New Book</h2>
     <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Fill in the details to add a book to your collection</p>
     
-    <form method="post" id="addBookForm">
+    <form method="post" id="addBookForm" enctype="multipart/form-data">
         {% csrf_token %}
         
-        <div class="form-group">
-            <label for="{{ form.name.id_for_label }}">
-                <i class="fas fa-heading"></i> Book Title
-            </label>
-            <div class="input-wrapper">
-                <i class="fas fa-book input-icon"></i>
-                {{ form.name }}
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">
+                    <i class="fas fa-heading"></i> Book Title
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-book input-icon"></i>
+                    {{ form.name }}
+                </div>
+                {% if form.name.errors %}
+                    <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.name.errors.0 }}</small>
+                {% endif %}
             </div>
-            {% if form.name.errors %}
-                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.name.errors.0 }}</small>
-            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ form.author.id_for_label }}">
+                    <i class="fas fa-pen-fancy"></i> Author Name
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user-edit input-icon"></i>
+                    {{ form.author }}
+                </div>
+                {% if form.author.errors %}
+                    <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.author.errors.0 }}</small>
+                {% endif %}
+            </div>
         </div>
         
-        <div class="form-group">
-            <label for="{{ form.author.id_for_label }}">
-                <i class="fas fa-pen-fancy"></i> Author Name
-            </label>
-            <div class="input-wrapper">
-                <i class="fas fa-user-edit input-icon"></i>
-                {{ form.author }}
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group">
+                <label for="{{ form.isbn.id_for_label }}">
+                    <i class="fas fa-barcode"></i> ISBN Number
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-hashtag input-icon"></i>
+                    {{ form.isbn }}
+                </div>
+                {% if form.isbn.errors %}
+                    <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.isbn.errors.0 }}</small>
+                {% endif %}
             </div>
-            {% if form.author.errors %}
-                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.author.errors.0 }}</small>
-            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ form.publisher.id_for_label }}">
+                    <i class="fas fa-building"></i> Publisher
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-print input-icon"></i>
+                    {{ form.publisher }}
+                </div>
+                {% if form.publisher.errors %}
+                    <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.publisher.errors.0 }}</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group">
+                <label for="{{ form.publication_year.id_for_label }}">
+                    <i class="fas fa-calendar-alt"></i> Publication Year
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-clock input-icon"></i>
+                    {{ form.publication_year }}
+                </div>
+                {% if form.publication_year.errors %}
+                    <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.publication_year.errors.0 }}</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.quantity.id_for_label }}">
+                    <i class="fas fa-sort-numeric-up"></i> Number of Copies
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-hashtag input-icon"></i>
+                    {{ form.quantity }}
+                </div>
+                {% if form.quantity.errors %}
+                    <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.quantity.errors.0 }}</small>
+                {% endif %}
+            </div>
         </div>
         
-        <div class="form-group">
-            <label for="{{ form.isbn.id_for_label }}">
-                <i class="fas fa-barcode"></i> ISBN Number
-            </label>
-            <div class="input-wrapper">
-                <i class="fas fa-hashtag input-icon"></i>
-                {{ form.isbn }}
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group" id="categorySelectionGroup">
+                <label for="{{ form.category.id_for_label }}">
+                    <i class="fas fa-tags"></i> Existing Category
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-layer-group input-icon"></i>
+                    {{ form.category }}
+                </div>
+                {% if form.category.errors %}
+                    <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.category.errors.0 }}</small>
+                {% endif %}
             </div>
-            {% if form.isbn.errors %}
-                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.isbn.errors.0 }}</small>
-            {% endif %}
-            <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
-                <i class="fas fa-info-circle"></i> Enter ISBN as numbers only (e.g., 9783161484100)
-            </small>
+            
+            <div class="form-group" id="categoryNameGroup">
+                <label for="{{ form.category_name.id_for_label }}">
+                    <i class="fas fa-plus"></i> Or New Category
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-folder-plus input-icon"></i>
+                    {{ form.category_name }}
+                </div>
+            </div>
         </div>
-        
+
         <div class="form-group">
-            <label for="{{ form.category.id_for_label }}">
-                <i class="fas fa-tags"></i> Select Existing Category
+            <label for="{{ form.cover_image.id_for_label }}">
+                <i class="fas fa-image"></i> Book Cover Image
             </label>
-            <div class="input-wrapper">
-                <i class="fas fa-layer-group input-icon"></i>
-                {{ form.category }}
+            <div class="cover-upload-container">
+                <div class="image-preview" id="imagePreview">
+                    <i class="fas fa-camera"></i>
+                    <span>Preview</span>
+                </div>
+                <div class="input-wrapper" style="flex: 1;">
+                    {{ form.cover_image }}
+                </div>
             </div>
-            {% if form.category.errors %}
-                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.category.errors.0 }}</small>
-            {% endif %}
-        </div>
-        
-        <div class="form-group">
-            <label for="{{ form.category_name.id_for_label }}">
-                <i class="fas fa-plus"></i> Or Create New Category
-            </label>
-            <div class="input-wrapper">
-                <i class="fas fa-folder-plus input-icon"></i>
-                {{ form.category_name }}
-            </div>
-            <small style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
-                <i class="fas fa-lightbulb"></i> Leave blank to use selected category above
-            </small>
-        </div>
-        
-        <div class="form-group">
-            <label for="{{ form.quantity.id_for_label }}">
-                <i class="fas fa-sort-numeric-up"></i> Number of Copies
-            </label>
-            <div class="input-wrapper">
-                <i class="fas fa-hashtag input-icon"></i>
-                {{ form.quantity }}
-            </div>
-            {% if form.quantity.errors %}
-                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.quantity.errors.0 }}</small>
+            {% if form.cover_image.errors %}
+                <small class="error-message"><i class="fas fa-exclamation-circle"></i> {{ form.cover_image.errors.0 }}</small>
             {% endif %}
         </div>
         
@@ -117,10 +163,41 @@
 <script>
     const form = document.getElementById('addBookForm');
     const submitButton = document.getElementById('submitButton');
+    const categoryNameInput = document.getElementById('{{ form.category_name.id_for_label }}');
+    const categorySelect = document.getElementById('{{ form.category.id_for_label }}');
+    const coverInput = document.getElementById('{{ form.cover_image.id_for_label }}');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    // Category Logic
+    categoryNameInput.addEventListener('input', function() {
+        if (this.value.trim() !== '') {
+            categorySelect.disabled = true;
+            categorySelect.parentElement.style.opacity = '0.5';
+        } else {
+            categorySelect.disabled = false;
+            categorySelect.parentElement.style.opacity = '1';
+        }
+    });
+
+    // Image Preview Logic
+    coverInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            }
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.innerHTML = '<i class="fas fa-camera"></i><span>Preview</span>';
+        }
+    });
     
     form.addEventListener('submit', function(e) {
         submitButton.classList.add('loading');
-        submitButton.disabled = true;
+        // If categories are disabled they don't get sent. 
+        // We re-enable them right before submit if they were disabled by our JS.
+        categorySelect.disabled = false;
     });
     
     // Add real-time validation
@@ -129,35 +206,60 @@
     inputs.forEach(input => {
         input.addEventListener('blur', function() {
             const formGroup = this.closest('.form-group');
-            
             if (this.value.trim() === '') {
                 formGroup.classList.add('has-error');
-                formGroup.classList.remove('has-success');
             } else {
-                formGroup.classList.remove('has-error');
-                formGroup.classList.add('has-success');
-            }
-        });
-        
-        input.addEventListener('input', function() {
-            const formGroup = this.closest('.form-group');
-            if (this.value.trim() !== '') {
                 formGroup.classList.remove('has-error');
             }
         });
     });
-    
-    // ISBN Validation
-    const isbnInput = document.querySelector('input[name="isbn"]');
-    if (isbnInput) {
-        isbnInput.addEventListener('input', function() {
-            // Allow only numbers and hyphens
-            this.value = this.value.replace(/[^0-9-]/g, '');
-        });
-    }
 </script>
 
 <style>
+    .cover-upload-container {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+
+    .image-preview {
+        width: 100px;
+        height: 140px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        overflow: hidden;
+    }
+
+    .image-preview i {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-row {
+        margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+        .form-row {
+            grid-template-columns: 1fr !important;
+        }
+        .cover-upload-container {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
     .error-message {
         color: var(--danger);
         font-size: 0.875rem;
