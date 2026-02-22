@@ -6,6 +6,8 @@ import numpy as np
 from PIL import Image
 import cv2
 from django.utils import timezone
+from django.core.files.base import ContentFile
+import base64
 import logging
 from pathlib import Path
 from typing import Union, List, Dict, Optional, Tuple, Any
@@ -23,6 +25,36 @@ MIN_BRIGHTNESS = 40
 MAX_BRIGHTNESS = 220
 MIN_SHARPNESS = 75
 MIN_FACE_SIZE = 100
+
+
+def decode_base64_image(image_data_str: str, filename_prefix: str = "upload") -> Tuple[Optional[ContentFile], Optional[str]]:
+    """
+    Decode base64 image string into a Django ContentFile
+    
+    Args:
+        image_data_str: Base64 string (optionally with data:image/xxx;base64, prefix)
+        filename_prefix: Prefix for the generated filename
+        
+    Returns:
+        tuple: (ContentFile, error_message)
+    """
+    try:
+        if not image_data_str:
+            return None, "Empty image data"
+            
+        if ';base64,' in image_data_str:
+            header, imgstr = image_data_str.split(';base64,')
+            ext = header.split('/')[-1]
+        else:
+            imgstr = image_data_str
+            ext = 'jpg'  # Default
+            
+        data = base64.b64decode(imgstr)
+        filename = f"{filename_prefix}_{int(timezone.now().timestamp())}.{ext}"
+        return ContentFile(data, name=filename), None
+    except Exception as e:
+        logger.error(f"Base64 decoding failed: {str(e)}")
+        return None, str(e)
 
 
 @dataclass

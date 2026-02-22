@@ -6,6 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 import base64
 from django.core.files.base import ContentFile
 from .views import process_recognition_image
+from .utils import decode_base64_image
 from .serializers import RecognitionLogSerializer
 from .models import RecognitionLog
 
@@ -31,17 +32,10 @@ class FaceRecognizeAPIView(APIView):
             )
 
         if image_data and not image_file:
-            try:
-                if ';base64,' in image_data:
-                    format, imgstr = image_data.split(';base64,')
-                else:
-                    imgstr = image_data
-                
-                ext = "jpg" # Default
-                image_file = ContentFile(base64.b64decode(imgstr), name=f"api_upload.{ext}")
-            except Exception as e:
+            image_file, error = decode_base64_image(image_data, filename_prefix="api_upload")
+            if error:
                 return Response(
-                    {'error': f'Invalid base64 image data: {str(e)}'},
+                    {'error': f'Invalid image data: {error}'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 

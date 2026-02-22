@@ -75,8 +75,15 @@ class BookViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def available_books(self, request):
         """Get all books that have at least one copy available"""
-        books = [book for book in self.get_queryset() if book.is_available()]
-        serializer = self.get_serializer(books, many=True)
+        # Optimized query using database annotation
+        queryset = self.get_queryset().annotate(
+            issued_count=models.Count(
+                'issues', 
+                filter=models.Q(issues__returned_date__isnull=True)
+            )
+        ).filter(quantity__gt=models.F('issued_count'))
+        
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'], url_path='by-category/(?P<category_id>[^/.]+)')
@@ -211,13 +218,23 @@ class IssuedBookViewSet(viewsets.ReadOnlyModelViewSet):
                     student = request.user.student
                 except Student.DoesNotExist:
                     return Response(
-                        {'error': 'You do not have a student profile.'},
+                        {'error': 'You do not have a student profile. Please provide a student_id.'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
             else:
                 student = get_object_or_404(Student, id=student_id)
             
+            # Additional validation (in case it wasn't caught by serializer)
+            if not student.can_issue_more_books():
+                if not student.is_active:
+                    return Response({'error': 'Student account is inactive.'}, status=status.HTTP_400_BAD_REQUEST)
+                if student.has_overdue_books:
+                    return Response({'error': 'Student has overdue books.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Student limit reached.'}, status=status.HTTP_400_BAD_REQUEST)
+
             book = get_object_or_404(Book, id=book_id)
+            if not book.is_available():
+                return Response({'error': 'Book is not available for issue.'}, status=status.HTTP_400_BAD_REQUEST)
             
             try:
                 with transaction.atomic():
@@ -237,8 +254,8 @@ class IssuedBookViewSet(viewsets.ReadOnlyModelViewSet):
                     )
             except Exception as e:
                 return Response(
-                    {'error': f'Error issuing book: {str(e)}'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {'error': f'Unexpected error during transaction: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

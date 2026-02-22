@@ -72,7 +72,8 @@ class FaceEncoding(models.Model):
         if encoding_array.shape != (128,):
             raise ValidationError(f"Invalid encoding shape: {encoding_array.shape}. Expected (128,)")
         
-        self.encoding_data = encoding_array.tobytes()
+        # Always save as float32 for consistency
+        self.encoding_data = encoding_array.astype(np.float32).tobytes()
     
     def get_encoding(self):
         """
