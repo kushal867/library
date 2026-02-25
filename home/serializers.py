@@ -89,8 +89,8 @@ class StudentSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'date_joined']
     
     def get_full_name(self, obj):
-        """Get student's full name"""
-        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+        """Get student's full name from model property"""
+        return obj.full_name
     
     def get_active_issues_count(self, obj):
         """Get count of currently issued books"""
@@ -190,3 +190,8 @@ class ReturnBookSerializer(serializers.Serializer):
             return value
         except IssuedBook.DoesNotExist:
             raise serializers.ValidationError("Issued book record not found.")
+
+
+class ExtendIssueSerializer(serializers.Serializer):
+    """Serializer for extending a book issue duration"""
+    days = serializers.IntegerField(default=7, min_value=1, max_value=30)

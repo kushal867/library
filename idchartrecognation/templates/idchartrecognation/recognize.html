@@ -40,10 +40,10 @@
             </div>
         </div>
         <div class="result-actions">
-            <a href="{% url 'issue_book' %}" class="btn btn-primary">
+            <a href="{% url 'issue_book' %}?student_id={{ recognized_student.id }}" class="btn btn-primary">
                 <i class="fas fa-hand-holding"></i> Issue Book
             </a>
-            <a href="{% url 'return_book' %}" class="btn btn-success">
+            <a href="{% url 'return_book' %}?student_id={{ recognized_student.id }}" class="btn btn-success">
                 <i class="fas fa-undo"></i> Return Book
             </a>
         </div>

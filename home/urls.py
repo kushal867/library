@@ -24,5 +24,6 @@ urlpatterns = [
     path('student/qr/<int:student_id>/', views.student_qr_code, name='student_qr_code'),
     path('dashboard/student/', views.student_dashboard, name='student_dashboard'),
     path('search_books_api/', views.search_books_api, name='search_books_api'),
+    path('student/<int:student_id>/', views.student_detail, name='student_detail'),
 ]
 

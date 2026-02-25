@@ -188,7 +188,17 @@ def issue_book(request):
                 for error in errors:
                     messages.error(request, error)
     else:
-        form = IssueBookForm()
+        # Check for student_id in GET parameters to pre-select student
+        student_id = request.GET.get('student_id')
+        initial_data = {}
+        if student_id:
+            try:
+                student = Student.objects.get(id=student_id)
+                initial_data['name2'] = student.user
+            except Student.DoesNotExist:
+                pass
+        
+        form = IssueBookForm(initial=initial_data)
     
     return render(request, "home/issue_book.html", {'form': form})
 
@@ -233,7 +243,9 @@ def return_book(request):
         else:
             messages.error(request, "Please select a book to return.")
     else:
-        form = ReturnBookForm()
+        # Check for student_id in GET parameters to filter issued books
+        student_id = request.GET.get('student_id')
+        form = ReturnBookForm(student_id=student_id)
     
     return render(request, "home/return_book.html", {'form': form})
 
@@ -363,7 +375,7 @@ def student_dashboard(request):
     # Overdue books
     overdue_books = current_books.filter(expiry_date__lt=timezone.now().date())
     
-    # Total fines (including current overdue and unpaid returned)
+    # Total fines
     total_fines = student.total_fines()
     
     context = {
@@ -377,6 +389,32 @@ def student_dashboard(request):
         'can_issue_more': student.can_issue_more_books(),
     }
     return render(request, 'home/student_dashboard.html', context)
+    
+@login_required(login_url='/login/')
+@staff_member_required(login_url='/login/')
+def student_detail(request, student_id):
+    """View detailed information about a specific student (staff only)"""
+    student = get_object_or_404(Student.objects.select_related('user'), id=student_id)
+    
+    # Currently borrowed books
+    current_books = IssuedBook.objects.filter(
+        student=student,
+        returned_date__isnull=True
+    ).select_related('book__category').order_by('-issued_date')
+    
+    # Book history
+    book_history = IssuedBook.objects.filter(
+        student=student,
+        returned_date__isnull=False
+    ).select_related('book__category').order_by('-returned_date')[:20]
+    
+    context = {
+        'student': student,
+        'current_books': current_books,
+        'book_history': book_history,
+        'total_fines': student.total_fines(),
+    }
+    return render(request, 'home/student_detail.html', context)
 
 @login_required(login_url='/login/')
 @staff_member_required(login_url='/login/')
@@ -543,28 +581,16 @@ def renew_book(request, issued_book_id):
     """Renew a book's due date (staff only)"""
     issued_book = get_object_or_404(IssuedBook, id=issued_book_id)
     
-    if issued_book.returned_date:
-        messages.error(request, "Cannot renew a book that has already been returned.")
-        return redirect('view_issued_books')
-    
     if request.method == "POST":
         try:
-            # Extend due date by 14 days
             days_to_extend = int(request.POST.get('days', 14))
+            success, message = issued_book.extend_issue(days=days_to_extend)
             
-            if days_to_extend < 1 or days_to_extend > 30:
-                messages.error(request, "Extension must be between 1 and 30 days.")
-                return redirect('view_issued_books')
-            
-            old_expiry = issued_book.expiry_date
-            issued_book.expiry_date = old_expiry + timedelta(days=days_to_extend)
-            issued_book.save()
-            
-            messages.success(
-                request,
-                f"Book '{issued_book.book.name}' for {issued_book.student.user.username} "
-                f"renewed successfully! New due date: {issued_book.expiry_date.strftime('%Y-%m-%d')}"
-            )
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
+                
         except Exception as e:
             messages.error(request, f"Error renewing book: {str(e)}")
     

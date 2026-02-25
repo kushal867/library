@@ -10,9 +10,9 @@ from .models import Category, Book, Student, IssuedBook
 from .serializers import (
     CategorySerializer, BookSerializer, BookDetailSerializer,
     StudentSerializer, IssuedBookSerializer, IssueBookSerializer,
-    ReturnBookSerializer
+    ReturnBookSerializer, ExtendIssueSerializer
 )
-
+1
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """
@@ -185,6 +185,26 @@ class IssuedBookViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = IssuedBook.objects.all().select_related('book', 'student__user')
     serializer_class = IssuedBookSerializer
     permission_classes = [IsAuthenticated]
+
+    @action(detail=True, methods=['post'])
+    def extend_issue(self, request, pk=None):
+        """Extend the expiry date of an issued book"""
+        issued_book = self.get_object()
+        serializer = ExtendIssueSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            days = serializer.validated_data.get('days', 7)
+            success, message = issued_book.extend_issue(days=days)
+            
+            if success:
+                return Response({
+                    'message': message,
+                    'new_expiry_date': issued_book.expiry_date
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': message}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'])
     def active_issues(self, request):

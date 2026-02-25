@@ -98,8 +98,18 @@ class Student(models.Model):
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
+    @property
+    def full_name(self):
+        """Get student's full name or username"""
+        full_name = self.user.get_full_name()
+        return full_name if full_name else self.user.username
+
     def __str__(self):
-        return f"{self.user.username} - {self.branch} [{self.classroom}]"
+        return f"{self.full_name} - {self.branch} [{self.classroom}]"
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('student_detail', args=[str(self.id)])
     
     def active_issues_count(self):
         """Count of currently issued books"""
@@ -195,6 +205,15 @@ class IssuedBook(models.Model):
             days_overdue = abs(self.days_until_due())
             return days_overdue * self.FINE_PER_DAY
         return 0
+    
+    def extend_issue(self, days=7):
+        """Extend the expiry date of the issued book"""
+        if self.returned_date:
+            return False, "Cannot extend a returned book."
+        
+        self.expiry_date = self.expiry_date + timedelta(days=days)
+        self.save()
+        return True, f"Successfully extended until {self.expiry_date}."
     
     def days_overdue(self):
         """Get number of days overdue (positive number, 0 if not overdue)"""

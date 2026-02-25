@@ -150,11 +150,19 @@ class ReturnBookForm(forms.Form):
     )
     
     def __init__(self, *args, **kwargs):
+        student_id = kwargs.pop('student_id', None)
         super().__init__(*args, **kwargs)
-        # Only show books that haven't been returned
-        self.fields['issued_book'].queryset = IssuedBook.objects.filter(
+        
+        # Base queryset for non-returned books
+        queryset = IssuedBook.objects.filter(
             returned_date__isnull=True
         ).select_related('book', 'student__user')
+        
+        # Filter by student if provided
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+            
+        self.fields['issued_book'].queryset = queryset
         
         # Customize the display of issued books
         self.fields['issued_book'].label_from_instance = lambda obj: (
