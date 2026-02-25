@@ -598,6 +598,26 @@ def renew_book(request, issued_book_id):
 
 @login_required(login_url='/login/')
 @staff_member_required(login_url='/login/')
+def pay_fine(request, issued_book_id):
+    """Mark a fine as paid (staff only)"""
+    issued_book = get_object_or_404(IssuedBook, id=issued_book_id)
+    
+    if request.method == "POST":
+        if issued_book.fine_amount > 0 and not issued_book.fine_paid:
+            issued_book.fine_paid = True
+            issued_book.save()
+            messages.success(
+                request, 
+                f"Fine of ${issued_book.fine_amount} for book '{issued_book.book.name}' marked as paid."
+            )
+        else:
+            messages.warning(request, "No outstanding fine to pay for this book.")
+            
+    return redirect(request.META.get('HTTP_REFERER', 'index'))
+
+
+@login_required(login_url='/login/')
+@staff_member_required(login_url='/login/')
 def bulk_delete_books(request):
     """Bulk delete books (staff only)"""
     if request.method == "POST":

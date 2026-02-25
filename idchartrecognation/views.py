@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.db.models import Count, Q
+from django.core.paginator import Paginator
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from django.db import transaction
@@ -342,21 +343,31 @@ def process_recognition_image(image_file, request):
         # Extract face from image
         result = extract_face_from_image(image_path)
         
+        # Prepare log entry (even if extraction fails)
+        log_entry = RecognitionLog(
+            timestamp=timezone.now()
+        )
+        
+        # Attempt to save the image to log
+        try:
+            # Re-read image data for logging
+            with open(image_path, 'rb') as f:
+                log_image_name = f"recog_{int(timezone.now().timestamp())}.jpg"
+                log_entry.image.save(log_image_name, ContentFile(f.read()), save=False)
+        except Exception as e:
+            logger.warning(f"Could not save image to recognition log: {e}")
+
         if not result['success']:
             # Log failed recognition
-            RecognitionLog.objects.create(
-                result='no_face' if 'No face' in result['error'] else 'error',
-                details=result['error']
-            )
+            log_entry.result = 'no_face' if 'No face' in result['error'] else 'error'
+            log_entry.details = result['error']
+            log_entry.save()
+            
             messages.error(request, f"Recognition failed: {result['error']}")
             logger.warning(f"Face recognition failed: {result['error']}")
             return None, None, result['error']
         
         if result['num_faces'] > 1:
-            RecognitionLog.objects.create(
-                result='multiple_faces',
-                details=f"Detected {result['num_faces']} faces"
-            )
             messages.warning(
                 request,
                 f"Multiple faces detected ({result['num_faces']}). Using the most prominent one."
@@ -367,6 +378,10 @@ def process_recognition_image(image_file, request):
         active_encodings = FaceEncoding.objects.filter(is_active=True)
         
         if not active_encodings.exists():
+            log_entry.result = 'error'
+            log_entry.details = 'No active encodings in database'
+            log_entry.save()
+            
             messages.warning(request, "No students enrolled yet. Please enroll students first.")
             logger.warning("Recognition attempted with no enrolled students")
             return None, None, 'no_enrollments'
@@ -378,12 +393,11 @@ def process_recognition_image(image_file, request):
             confidence = match_result['confidence']
             
             # Log successful recognition
-            RecognitionLog.objects.create(
-                result='success',
-                matched_student=recognized_student,
-                confidence=confidence,
-                details=f"Matched against {match_result['num_compared']} enrolled students"
-            )
+            log_entry.result = 'success'
+            log_entry.matched_student = recognized_student
+            log_entry.confidence = confidence
+            log_entry.details = f"Matched against {match_result['num_compared']} enrolled students"
+            log_entry.save()
             
             logger.info(f"Successfully recognized student {recognized_student.id} with confidence {confidence:.3f}")
             messages.success(
@@ -394,11 +408,10 @@ def process_recognition_image(image_file, request):
             result_message = 'success'
         else:
             # Log no match
-            RecognitionLog.objects.create(
-                result='no_match',
-                confidence=match_result['confidence'],
-                details=f"No match found among {match_result['num_compared']} enrolled students"
-            )
+            log_entry.result = 'no_match'
+            log_entry.confidence = match_result['confidence']
+            log_entry.details = f"No match found among {match_result['num_compared']} enrolled students"
+            log_entry.save()
             
             logger.info(f"No match found. Best confidence: {match_result['confidence']:.3f}")
             messages.warning(
@@ -434,6 +447,33 @@ def process_recognition_image(image_file, request):
                 logger.warning(f"Failed to clean up temporary directory {temp_path}: {str(e)}")
     
     return recognized_student, confidence, result_message
+
+
+@login_required
+@staff_member_required
+def recognition_logs(request):
+    """View and manage recognition logs (staff only)"""
+    logs = RecognitionLog.objects.select_related(
+        'matched_student__user'
+    ).order_by('-timestamp')
+    
+    # Pagination
+    paginator = Paginator(logs, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'idchartrecognation/logs.html', {'page_obj': page_obj})
+
+
+@login_required
+@staff_member_required
+def delete_log(request, log_id):
+    """Delete a recognition log entry"""
+    log = get_object_or_404(RecognitionLog, id=log_id)
+    if request.method == 'POST':
+        log.delete()
+        messages.success(request, "Log entry deleted successfully.")
+    return redirect('idchartrecognation:recognition_logs')
 
 
 @login_required
