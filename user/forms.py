@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 
 class LoginForm(forms.Form):
@@ -23,51 +25,50 @@ class RegisterForm(forms.ModelForm):
         widget=forms.PasswordInput(attrs={
             'placeholder': 'Password',
             'class': 'form-control'
-        }),
-        help_text='Password must be at least 8 characters long'
+        })
     )
+
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'placeholder': 'Confirm Password',
             'class': 'form-control'
         })
     )
-    
-    # Student information fields (optional during registration)
+
     classroom = forms.CharField(
         max_length=10,
         required=False,
         widget=forms.TextInput(attrs={
             'placeholder': 'e.g., 10-A',
             'class': 'form-control'
-        }),
-        help_text='Your classroom (optional)'
+        })
     )
+
     branch = forms.CharField(
-        max_length=10,
+        max_length=20,
         required=False,
         widget=forms.TextInput(attrs={
             'placeholder': 'e.g., Science',
             'class': 'form-control'
-        }),
-        help_text='Your branch (optional)'
+        })
     )
+
     roll_no = forms.CharField(
-        max_length=3,
+        max_length=5,
         required=False,
         widget=forms.TextInput(attrs={
             'placeholder': 'Roll Number',
             'class': 'form-control'
         })
     )
+
     phone = forms.CharField(
         max_length=10,
         required=False,
         widget=forms.TextInput(attrs={
             'placeholder': '10-digit phone number',
             'class': 'form-control'
-        }),
-        help_text='10-digit phone number (optional)'
+        })
     )
 
     class Meta:
@@ -84,31 +85,48 @@ class RegisterForm(forms.ModelForm):
             }),
         }
 
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username already exists.")
+        return username
+
     def clean_email(self):
-        """Ensure email is unique and valid"""
         email = self.cleaned_data.get('email')
         if email and User.objects.filter(email=email).exists():
-            raise forms.ValidationError("This email address is already registered.")
+            raise forms.ValidationError("Email already registered.")
         return email
-    
+
     def clean_phone(self):
-        """Validate phone number format"""
         phone = self.cleaned_data.get('phone')
-        if phone and not phone.isdigit():
-            raise forms.ValidationError("Phone number must contain only digits.")
-        if phone and len(phone) != 10:
-            raise forms.ValidationError("Phone number must be exactly 10 digits.")
+        if phone:
+            if not phone.isdigit():
+                raise forms.ValidationError("Phone number must contain only digits.")
+            if len(phone) != 10:
+                raise forms.ValidationError("Phone number must be exactly 10 digits.")
         return phone
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            raise forms.ValidationError(e.messages)
+        return password
 
     def clean(self):
         cleaned_data = super().clean()
-        password = cleaned_data.get('password')
-        confirm_password = cleaned_data.get('confirm_password')
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
 
         if password and confirm_password and password != confirm_password:
-            raise forms.ValidationError("Passwords do not match")
-        
-        if password and len(password) < 8:
-            raise forms.ValidationError("Password must be at least 8 characters long")
+            self.add_error('confirm_password', "Passwords do not match.")
 
         return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password'])  # Hash password
+        if commit:
+            user.save()
+        return user
