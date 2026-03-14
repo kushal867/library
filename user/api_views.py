@@ -4,147 +4,131 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
+import logging
+
 from .serializers import (
-    UserRegistrationSerializer, LoginSerializer,
+    UserRegistrationSerializer,
+    LoginSerializer,
     UserSerializer
 )
 from home.serializers import StudentSerializer
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class RegisterAPIView(APIView):
-    """API view for user registration"""
+    """Register a new user"""
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
-        """Register a new user"""
         serializer = UserRegistrationSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            user = serializer.save()
-            
-            # Create auth token
-            token, created = Token.objects.get_or_create(user=user)
-            
-            # Auto-login the user
-            login(request, user)
-            
-            return Response(
-                {
-                    'message': f'Welcome, {user.username}! Your account has been created successfully.',
-                    'token': token.key,
-                    'user': UserSerializer(user).data
-                },
-                status=status.HTTP_201_CREATED
-            )
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.save()
+        token, _ = Token.objects.get_or_create(user=user)
+
+        login(request, user)
+
+        logger.info(f"New user registered: {user.username}")
+
+        return Response({
+            "message": f"Welcome {user.username}! Account created successfully.",
+            "token": token.key,
+            "user": UserSerializer(user).data
+        }, status=status.HTTP_201_CREATED)
 
 
 class LoginAPIView(APIView):
-    """API view for user login"""
+    """User login"""
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
-        """Login user and return token"""
         serializer = LoginSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            
-            # Get or create auth token
-            token, created = Token.objects.get_or_create(user=user)
-            
-            # Login the user
-            login(request, user)
-            
-            return Response(
-                {
-                    'message': f'Welcome back, {user.username}!',
-                    'token': token.key,
-                    'user': UserSerializer(user).data
-                },
-                status=status.HTTP_200_OK
-            )
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.validated_data["user"]
+        token, _ = Token.objects.get_or_create(user=user)
+
+        login(request, user)
+
+        logger.info(f"User logged in: {user.username}")
+
+        return Response({
+            "message": f"Welcome back {user.username}",
+            "token": token.key,
+            "user": UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
 
 
 class LogoutAPIView(APIView):
-    """API view for user logout"""
+    """User logout"""
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request):
-        """Logout user and delete token"""
-        try:
-            # Delete the user's token
-            request.user.auth_token.delete()
-        except Exception as e:
-            logger.error(f"Error during logout: {str(e)}")
-            pass
-        
-        # Logout the user
         username = request.user.username
+
+        try:
+            token = Token.objects.filter(user=request.user)
+            if token.exists():
+                token.delete()
+        except Exception as e:
+            logger.error(f"Logout token deletion error: {str(e)}")
+
         logout(request)
-        
-        return Response(
-            {'message': f'Goodbye, {username}! You have been logged out successfully.'},
-            status=status.HTTP_200_OK
-        )
+
+        logger.info(f"User logged out: {username}")
+
+        return Response({
+            "message": f"Goodbye {username}, you are logged out."
+        }, status=status.HTTP_200_OK)
 
 
 class UserProfileAPIView(APIView):
-    """API view for user profile"""
+    """Get and update user profile"""
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
-        """Get current user's profile"""
-        serializer = UserSerializer(request.user)
-        
-        # Include student profile if exists
-        data = serializer.data
+        user_serializer = UserSerializer(request.user)
+        data = user_serializer.data
+
+        student_profile = None
         try:
-            if hasattr(request.user, 'student'):
-                student_serializer = StudentSerializer(request.user.student)
-                data['student_profile'] = student_serializer.data
-            else:
-                data['student_profile'] = None
+            if hasattr(request.user, "student"):
+                student_profile = StudentSerializer(request.user.student).data
         except Exception as e:
-            logger.error(f"Error fetching student profile for user {request.user.id}: {str(e)}")
-            data['student_profile'] = None
-        
+            logger.error(f"Student profile error: {str(e)}")
+
+        data["student_profile"] = student_profile
         return Response(data)
-    
+
+
     def put(self, request):
-        """Update current user's profile"""
-        serializer = UserSerializer(request.user, data=request.data, partial=False)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {
-                    'message': 'Profile updated successfully.',
-                    'user': serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        serializer = UserSerializer(request.user, data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+
+        return Response({
+            "message": "Profile updated successfully",
+            "user": serializer.data
+        })
+
+
     def patch(self, request):
-        """Partially update current user's profile"""
         serializer = UserSerializer(request.user, data=request.data, partial=True)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {
-                    'message': 'Profile updated successfully.',
-                    'user': serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+
+        return Response({
+            "message": "Profile updated successfully",
+            "user": serializer.data
+        })
